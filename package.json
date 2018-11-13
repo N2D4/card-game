@@ -1,0 +1,49 @@
+{
+  "name": "card-game",
+  "version": "1.0.0",
+  "description": "## hello",
+  "client_js_src": "src/client/index.ts",
+  "client_js_bundle": "dist/index.js",
+  "client_files": {
+    "index.html": "src/client/index.html",
+    "index.css": "src/client/index.css",
+    "index.js": "dist/index.js",
+    "assets/": "assets/"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "npm run type-check -- --watch",
+    "build": "npm run build:types && npm run build:js",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:js": "babel src --out-dir lib --extensions \".ts,.tsx\" --source-maps inline",
+    "bundle": "rollup -c",
+    "start": "npm run build:js && npm run bundle && node lib/server/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/N2D4/card-game.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/N2D4/card-game/issues"
+  },
+  "homepage": "https://github.com/N2D4/card-game#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.1.5",
+    "@babel/core": "^7.1.5",
+    "@babel/plugin-proposal-class-properties": "^7.1.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/preset-env": "^7.1.5",
+    "@babel/preset-typescript": "^7.1.0",
+    "babel-plugin-module-resolver": "^3.1.1",
+    "rollup": "^0.67.1",
+    "rollup-plugin-babel": "^4.0.3",
+    "typescript": "^3.1.6",
+    "tslint": "^5.11.0"
+  },
+  "dependencies": {
+    "@types/express": "^4.16.0",
+    "express": "^4.16.4"
+  }
+}
