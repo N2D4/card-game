@@ -1,3 +1,5 @@
+import 'common/serialize/InitSerializers.ts';
+
 import express from 'express';
 import pkg from 'package.json';
 
@@ -10,8 +12,7 @@ app.get('/', (req, res) => {
 });
 
 const client_files: {[key: string]: string} = pkg.client_files;
-for (const key of Object.keys(client_files)) {
-    const value: string = client_files[key];
+for (const [key, value] of Object.entries(client_files)) {
     app.use('/' + key, express.static(value));
 }
 

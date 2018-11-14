@@ -10,6 +10,9 @@
             "root": ["./"],
             "alias": {
                 "src": "./src",
+                "client": "./src/client",
+                "common": "./src/common",
+                "server": "./src/server",
                 "package.json": "./package.json"
             }
         }]
