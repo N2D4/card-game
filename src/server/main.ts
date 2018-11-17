@@ -1,5 +1,3 @@
-import 'common/serialize/InitSerializers.ts';
-
 import express from 'express';
 import pkg from 'package.json';
 

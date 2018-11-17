@@ -21,8 +21,12 @@
                 "instance-field",
                 "constructor",
                 "static-method",
-                "instance-method"
+                "instance-method",
             ]
-        }]
+        }],
+        "arrow-parens": false,
+        "no-empty-interface": false,
+        "no-namespace": false,
+        "curly": false
     }
 }
