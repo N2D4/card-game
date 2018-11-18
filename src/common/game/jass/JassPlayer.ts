@@ -1,14 +1,14 @@
 import CardDeck from 'common/game/CardDeck';
 import Player from 'common/players/Player';
 import JassStichOrder from 'src/common/game/jass/JassStichOrder';
-import JassCard from './JassCard';
+import { JassCard, JassColor, JassType } from './JassCard';
 import JassHand from './JassHand';
 
-export default abstract class JassPlayer extends Player<string> {
+export default abstract class JassPlayer extends Player<any> {
 
     public hand: JassHand = new JassHand([]);
     public guessedScore: number = -1;
-    public currentScore: number = 0;
+    public currentScore: number = -1;
     public index: number = -1;
 
     public async newGame(index: number, deck: CardDeck<JassCard>, numberOfCards: number): Promise<void> {

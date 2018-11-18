@@ -3,19 +3,19 @@ import { range } from "common/utils";
 import CardDeck from "../CardDeck";
 
 
-class JassCard extends Card {
-    public static readonly COLORS: JassCard.Color[] = [...range(0, 3)];
-    public static readonly TYPES: JassCard.Type[] = [...range(6, 14)];
-    private static readonly instances: JassCard[][];
+export class JassCard extends Card {
+    public static readonly COLORS: JassColor[] = [...range(0, 4)];
+    public static readonly TYPES: JassType[] = [...range(6, 15)];
+    private static readonly instances: JassCard[][] = JassCard.COLORS.map(a => []);
 
-    private constructor(public readonly color: JassCard.Color, public readonly type: JassCard.Type) {
+    private constructor(public readonly color: JassColor, public readonly type: JassType) {
         super();
     }
 
 
-    public static getCard(color: JassCard.Color, type: JassCard.Type): JassCard {
-        return this.instances[color][type - JassCard.Type.SECHSER]
-           || (this.instances[color][type - JassCard.Type.SECHSER] = new JassCard(color, type));
+    public static getCard(color: JassColor, type: JassType): JassCard {
+        return this.instances[color][type - JassType.SECHSER]
+           || (this.instances[color][type - JassType.SECHSER] = new JassCard(color, type));
     }
 
     public static getDeck(): CardDeck<JassCard> {
@@ -38,27 +38,21 @@ class JassCard extends Card {
 }
 
 
-declare namespace JassCard {
-    export enum Color {
-        SCHELLE = 0,
-        ROESLE = 1,
-        SCHILTE = 2,
-        EICHEL = 3,
-    }
-
-    export enum Type {
-        SECHSER = 6,
-        SIEBNER = 7,
-        ACHTER = 8,
-        NEUNE = 9,
-        BANNER = 10,
-        UNDER = 11,
-        OBER = 12,
-        KÖNIG = 13,
-        ASS = 14,
-    }
+export enum JassColor {
+    SCHELLE = 0,
+    ROESLE = 1,
+    SCHILTE = 2,
+    EICHEL = 3,
 }
 
-
-
-export default JassCard;
+export enum JassType {
+    SECHSER = 6,
+    SIEBNER = 7,
+    ACHTER = 8,
+    NEUNE = 9,
+    BANNER = 10,
+    UNDER = 11,
+    OBER = 12,
+    KÖNIG = 13,
+    ASS = 14,
+}

@@ -1,4 +1,4 @@
-import JassCard from './JassCard';
+import {JassCard, JassColor, JassType} from './JassCard';
 import JassStich from './JassStich';
 
 export default class JassHand {
@@ -8,5 +8,13 @@ export default class JassHand {
 
     public getPlayable(stich: JassStich) {
         return stich.getPlayable(this);
+    }
+
+    public add(card: JassCard): void {
+        this.cards.push(card);
+    }
+
+    public remove(card: JassCard): void {
+        this.cards.splice(this.cards.indexOf(card), 1);
     }
 }

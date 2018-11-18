@@ -17,7 +17,8 @@
     "build:types": "tsc --emitDeclarationOnly",
     "build:js": "babel src --out-dir lib --extensions \".ts,.tsx\" --source-maps inline",
     "bundle": "rollup -c",
-    "start": "npm run build:js && npm run bundle && node lib/server/main.js"
+    "run": "node lib/server/main.js",
+    "start": "npm run-script build:js && npm run-script bundle && npm run-script run"
   },
   "repository": {
     "type": "git",
@@ -39,11 +40,13 @@
     "babel-plugin-module-resolver": "^3.1.1",
     "rollup": "^0.67.1",
     "rollup-plugin-babel": "^4.0.3",
-    "typescript": "^3.1.6",
-    "tslint": "^5.11.0"
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.6"
   },
   "dependencies": {
+    "@babel/polyfill": "^7.0.0",
     "@types/express": "^4.16.0",
+    "babel-polyfill": "^6.26.0",
     "express": "^4.16.4"
   }
 }

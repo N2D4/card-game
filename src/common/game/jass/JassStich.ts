@@ -1,10 +1,10 @@
-import JassCard from './JassCard';
+import {JassCard, JassColor, JassType} from './JassCard';
 import JassHand from './JassHand';
-import JassStichOrder from './JassStichOrder';
 import JassPlayer from './JassPlayer';
+import JassStichOrder from './JassStichOrder';
 
 export default class JassStich {
-    public readonly cards: {player: JassPlayer, card: JassCard}[] = [];
+    public readonly cards: Array<{player: JassPlayer, card: JassCard}> = [];
 
     public constructor(public readonly trumpf: JassStichOrder) { }
 
@@ -12,8 +12,8 @@ export default class JassStich {
         return this.cards.length;
     }
 
-    public firstColor(): JassCard.Color | undefined {
-        return this.size() < 0 ? undefined : this.cards[0].card.color;
+    public firstColor(): JassColor | undefined {
+        return this.size() <= 0 ? undefined : this.cards[0].card.color;
     }
 
     public add(player: JassPlayer, card: JassCard): void {
@@ -22,17 +22,18 @@ export default class JassStich {
 
     public getPlayable(hand: JassHand): JassCard[] {
         let playable: JassCard[] = [];
-        if (this.firstColor !== undefined) {
-            playable = hand.cards.filter(a => a.color !== this.firstColor());
+        const firstCol = this.firstColor();
+        if (firstCol !== undefined) {
+            playable = hand.cards.filter(a => this.trumpf.colorEffective(a.color, firstCol));
         }
-        if (playable.filter(this.trumpf.canBeHeldBack).length <= 0) {
-            playable = hand.cards;
+        if (playable.filter(a => this.trumpf.canBeHeldBack(a)).length <= 0) {
+            playable = [...hand.cards];
         }
         return playable;
     }
 
     public getWinner(): JassPlayer {
-        const firstColor: JassCard.Color = this.firstColor() as JassCard.Color;
+        const firstColor: JassColor = this.firstColor() as JassColor;
         let best: {player: JassPlayer, card: JassCard} = this.cards[0];
         for (let i = 1; i < this.size(); i++) {
             const cur = this.cards[i];

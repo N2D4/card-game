@@ -1,11 +1,11 @@
 import CardDeck from 'common/game/CardDeck';
 import CardGame from 'common/game/CardGame';
 import { random } from 'common/utils';
-import JassCard from './JassCard';
+import { JassCard, JassColor, JassType } from './JassCard';
 import JassHand from './JassHand';
-import JassStichOrder from './JassStichOrder';
 import JassPlayer from './JassPlayer';
 import JassStich from './JassStich';
+import JassStichOrder from './JassStichOrder';
 
 export default class JassGame extends CardGame<JassPlayer, JassCard, any, any> {
 
@@ -44,17 +44,18 @@ export default class JassGame extends CardGame<JassPlayer, JassCard, any, any> {
             const stich = new JassStich(trumpf);
             this.broadcast(stich);
 
-            for (let i = 0; i < numberOfRounds; i++) {
+            for (let j = 0; j < this.players.length; j++) {
                 // Select player
-                const player: JassPlayer = this.players[(lastWinner.index + i) % this.players.length];
+                const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
 
                 // Find playable cards
                 const playable = player.hand.getPlayable(stich);
 
                 // Ask the player which card to play
-                let played: JassCard = await player.chooseCard(playable);
+                const played: JassCard = await player.chooseCard(playable);
                 
-                // Add the card to the stich
+                // Remove the card from the hand and add it to the stich
+                player.hand.remove(played);
                 stich.add(player, played);
 
                 // Send a broadcast signal so that game state is updated on all clients
@@ -81,6 +82,7 @@ export default class JassGame extends CardGame<JassPlayer, JassCard, any, any> {
     }
 
     protected createGameState(player: JassPlayer, messages: any[]): any {
+        // TODO Improve this
         return messages;
     }
 

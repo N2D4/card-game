@@ -13,6 +13,10 @@
         "prefer-const": {
             "severity": "warning"
         },
+        "ordered-imports": {
+            "severity": "warning"
+        },
+        "max-classes-per-file": false,
         "no-empty": false,
         "no-trailing-whitespace": false,
         "member-ordering": [true, {
@@ -21,7 +25,7 @@
                 "instance-field",
                 "constructor",
                 "static-method",
-                "instance-method",
+                "instance-method"
             ]
         }],
         "arrow-parens": false,
