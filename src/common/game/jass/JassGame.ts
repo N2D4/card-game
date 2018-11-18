@@ -1,89 +1,29 @@
 import CardDeck from 'common/game/CardDeck';
 import CardGame from 'common/game/CardGame';
-import { random } from 'common/utils';
-import { JassCard, JassColor, JassType } from './JassCard';
-import JassHand from './JassHand';
-import JassPlayer from './JassPlayer';
-import JassStich from './JassStich';
-import JassStichOrder from './JassStichOrder';
+import { JassCard, JassColor, JassType } from 'common/game/jass/JassCard';
+import JassPlayer from 'common/game/jass/JassPlayer';
 
-export default class JassGame extends CardGame<JassPlayer, JassCard, any, any> {
+export default abstract class JassGame extends CardGame<JassPlayer, JassCard, any, any> {
 
-    constructor(player1: JassPlayer, player2: JassPlayer, player3?: JassPlayer, player4?: JassPlayer) {
-        super([player1, player2, player3, player4].filter(a => a !== undefined) as JassPlayer[]);
+    constructor(players: JassPlayer[]) {
+        super(players);
     }
 
-    // TODO: Untertrumpfen, Schelle 7 starts
-    public async play(): Promise<void> {
-
-
+    protected async preparePlayers(): Promise<number> {
         // Prepare deck
         const deck: CardDeck<JassCard> = JassCard.getDeck();
         deck.shuffle();
         const numberOfRounds = deck.size() / this.players.length;
 
-
         // Prepare players
         await this.allPlayersIter((i, p) => p.newGame(i, deck, numberOfRounds));
 
-
-        // Choose Trumpf
-        const trumpf: JassStichOrder = random(JassStichOrder.colors());
-        this.broadcast(trumpf);
-
-
-        // Have all players guess scores
-        await this.allPlayers(p => p.guessScore(0, 157));
-        this.broadcast();
-
-
-        // Play the rounds
-        let lastWinner: JassPlayer = random(this.players);
-        for (let i = 0; i < numberOfRounds; i++) {
-            // Create and broadcast the Stich object
-            const stich = new JassStich(trumpf);
-            this.broadcast(stich);
-
-            for (let j = 0; j < this.players.length; j++) {
-                // Select player
-                const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
-
-                // Find playable cards
-                const playable = player.hand.getPlayable(stich);
-
-                // Ask the player which card to play
-                const played: JassCard = await player.chooseCard(playable);
-                
-                // Remove the card from the hand and add it to the stich
-                player.hand.remove(played);
-                stich.add(player, played);
-
-                // Send a broadcast signal so that game state is updated on all clients
-                // We've already broadcasted the same stich object so don't need to do that again
-                this.broadcast();
-            }
-            lastWinner = stich.getWinner();
-            lastWinner.currentScore += stich.getScore();
-        }
-
-
-        // Last stich gives bonus points
-        lastWinner.currentScore += 5;
-
-
-        // Create ranking
-        const ranking: JassPlayer[] = [...this.players];
-        ranking.sort((a, b) => Math.abs(a.currentScore - a.guessedScore) - Math.abs(b.currentScore - b.guessedScore));
-
-
-        // Broadcast ranking
-        this.broadcast(ranking);
-
+        return numberOfRounds;
     }
 
     protected createGameState(player: JassPlayer, messages: any[]): any {
         // TODO Improve this
-        return messages;
+        return [messages, player];
     }
 
 }

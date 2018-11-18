@@ -2,8 +2,9 @@ import 'common/tweaks';
 
 import express from 'express';
 import pkg from 'package.json';
+import DifferenzlerJassGame from 'src/common/game/jass/modes/DifferenzlerJassGame';
+import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import ExampleJassPlayer from './ExampleJassPlayer';
-import JassGame from 'src/common/game/jass/JassGame';
 
 const app: express.Application = express();
 const port: number = +(process.env.PORT || 3000);
@@ -31,6 +32,6 @@ const player2: ExampleJassPlayer = new ExampleJassPlayer("b");
 const player3: ExampleJassPlayer = new ExampleJassPlayer("c");
 const player4: ExampleJassPlayer = new ExampleJassPlayer("d");
 
-const game: JassGame = new JassGame(player1, player2, player3, player4);
+const game: SchieberJassGame = new SchieberJassGame(player1, player2, player3, player4);
 
 game.play();

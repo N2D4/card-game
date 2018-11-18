@@ -14,6 +14,7 @@ export default abstract class JassPlayer extends Player<any> {
     public async newGame(index: number, deck: CardDeck<JassCard>, numberOfCards: number): Promise<void> {
         this.index = index;
         this.currentScore = 0;
+        this.guessedScore = -1;
         this.hand = new JassHand(deck.draw(numberOfCards));
     }
 
@@ -21,8 +22,9 @@ export default abstract class JassPlayer extends Player<any> {
         this.guessedScore = await this.askForScore(rangeMin, rangeMax);
     }
 
+
     public abstract async chooseCard(choices: JassCard[]): Promise<JassCard>;
     public abstract async askForScore(rangeMin: number, rangeMax: number): Promise<number>;
-    public abstract async chooseStichOrder(choices: JassStichOrder[]): Promise<JassStichOrder>;
+    public abstract async chooseStichOrder<G, T extends (JassStichOrder | G)>(choices: T[]): Promise<T>;
 
 }

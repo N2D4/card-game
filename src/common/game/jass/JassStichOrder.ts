@@ -2,9 +2,37 @@ import {JassCard, JassColor, JassType} from './JassCard';
 
 export default abstract class JassStichOrder {
 
-    private static Dummy = class extends JassStichOrder {
-        constructor() {
-            super();
+    private static Dummy = class extends JassStichOrder { };
+
+    private static Obenabe = class extends JassStichOrder {
+        public getScore(card: JassCard) {
+            if (card.type === JassType.ACHTER) {
+                return 8;
+            }
+            return super.getScore(card);
+        }
+
+        public getScoreMultiplier(): number {
+            return 3;
+        }
+    };
+
+    private static Unneuffe = class extends JassStichOrder {
+        public getScore(card: JassCard) {
+            switch (card.type) {
+                case JassType.ACHTER: return 8;
+                case JassType.ASS: return 0;
+                case JassType.SECHSER: return 11;
+                default: return super.getScore(card);
+            }
+        }
+
+        public compare(a: JassCard, b: JassCard): number {
+            return -super.compare(a, b);                        
+        }
+
+        public getScoreMultiplier(): number {
+            return 3;
         }
     };
 
@@ -44,6 +72,10 @@ export default abstract class JassStichOrder {
         public colorEffective(color: JassColor, firstColor: JassColor): boolean {
             return color === this.color || super.colorEffective(color, firstColor);
         }
+
+        public getScoreMultiplier(): number {
+            return (this.color === JassColor.SCHILTE || this.color === JassColor.SCHELLE) ? 2 : 1;
+        }
     };
 
 
@@ -51,8 +83,8 @@ export default abstract class JassStichOrder {
     public static readonly SCHELLE: JassStichOrder = new JassStichOrder.Color(JassColor.SCHELLE);
     public static readonly SCHILTE: JassStichOrder = new JassStichOrder.Color(JassColor.SCHILTE);
     public static readonly EICHEL: JassStichOrder = new JassStichOrder.Color(JassColor.EICHEL);
-    public static readonly OBENABE: JassStichOrder = new JassStichOrder.Dummy();
-    public static readonly UNNEUFFE: JassStichOrder = new JassStichOrder.Dummy();
+    public static readonly OBENABE: JassStichOrder = new JassStichOrder.Obenabe();
+    public static readonly UNNEUFFE: JassStichOrder = new JassStichOrder.Unneuffe();
     public static readonly SLALOM: JassStichOrder = new JassStichOrder.Dummy();
 
 
@@ -82,6 +114,10 @@ export default abstract class JassStichOrder {
         return JassStichOrder.allpriv;
     }
 
+    public static getSchieberStichOrder(): JassStichOrder[] {
+        return [JassStichOrder.OBENABE, JassStichOrder.UNNEUFFE].concat(JassStichOrder.colors());
+    }
+
     public canBeHeldBack(card: JassCard) {
         return false;
     }
@@ -103,6 +139,10 @@ export default abstract class JassStichOrder {
 
     public colorEffective(color: JassColor, firstColor: JassColor): boolean {
         return color === firstColor;
+    }
+
+    public getScoreMultiplier(): number {
+        return 1;
     }
 
 }

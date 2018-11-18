@@ -10,12 +10,19 @@ export class JassCard extends Card {
 
     private constructor(public readonly color: JassColor, public readonly type: JassType) {
         super();
+        if (JassCard.instances[color] !== undefined && JassCard.instances[color][type] !== undefined) {
+            throw new Error("A JassCard was constructed manually. Don't do that; use JassCard.getCard(...) instead");
+        }
     }
 
 
     public static getCard(color: JassColor, type: JassType): JassCard {
         return this.instances[color][type - JassType.SECHSER]
            || (this.instances[color][type - JassType.SECHSER] = new JassCard(color, type));
+    }
+
+    public static getRoesle7(): JassCard {
+        return JassCard.getCard(JassColor.ROESLE, JassType.SIEBNER);
     }
 
     public static getDeck(): CardDeck<JassCard> {

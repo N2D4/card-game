@@ -17,4 +17,8 @@ export default class JassHand {
     public remove(card: JassCard): void {
         this.cards.splice(this.cards.indexOf(card), 1);
     }
+
+    public contains(card: JassCard): boolean {
+        return this.cards.indexOf(card) >= 0;
+    }
 }
