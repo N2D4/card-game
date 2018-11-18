@@ -6,6 +6,7 @@ import JassPlayer from 'common/game/jass/JassPlayer';
 import JassStich from 'common/game/jass/JassStich';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
 import { random } from 'common/utils';
+import { JassWyys } from '../JassWyys';
 
 export default class SchieberJassGame extends JassGame {
 
@@ -13,7 +14,7 @@ export default class SchieberJassGame extends JassGame {
         super([player1, player2, player3, player4]);
     }
 
-    // TODO: Untertrumpfen, Schelle 7 starts
+    // TODO: Untertrumpfen
     public async play(): Promise<void> {
         const numberOfRounds = await this.preparePlayers();
 
@@ -36,14 +37,33 @@ export default class SchieberJassGame extends JassGame {
 
         // Play the rounds
         let lastWinner: JassPlayer = this.startingPlayer;
+
+        // stores options of each player
+        const options: JassWyys[][] = [[], [], [], []]; 
+
+        // stores if player wants to wyys
+        const willWyys: boolean[] = [false, false, false, false];
+
         for (let i = 0; i < numberOfRounds; i++) {
             // Create and broadcast the Stich object
             const stich = new JassStich(trumpf);
             this.broadcast(stich);
 
             for (let j = 0; j < this.players.length; j++) {
+
                 // Select player
                 const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
+
+                // ask players if they want to wyys if its turn 1
+                if (i === 0) {
+                    // get all possible wyys options for player
+                    options[j] = player.hand.getWyysOptions();
+                    options[j].sort(JassWyys.compare);
+                    
+                    // ask him if he wants to wyys if he can
+                    if (options[j].length !== 0)
+                        willWyys[j] = await player.chooseToWyys(options[j][options[j].length - 1]);
+                }
 
                 // Find playable cards
                 const playable = player.hand.getPlayable(stich);
@@ -59,6 +79,18 @@ export default class SchieberJassGame extends JassGame {
                 // We've already broadcasted the same stich object so don't need to do that again
                 this.broadcast();
             }
+
+            // find player with best wyys anf give points to its team
+            if (i === 1) {
+                for (let j = 0; j < 4; j++) {
+                    if (willWyys[j])
+                        options[j] = await this.players[j].chooseWhatToWyys(options[j]);
+                }
+            }
+
+            // TODO add scores to team with better wyys
+
+            // get new winner
             lastWinner = stich.getWinner();
             lastWinner.currentScore += stich.getScore();
         }
