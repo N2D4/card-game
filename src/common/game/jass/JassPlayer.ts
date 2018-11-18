@@ -3,6 +3,7 @@ import Player from 'common/players/Player';
 import JassStichOrder from 'src/common/game/jass/JassStichOrder';
 import { JassCard, JassColor, JassType } from './JassCard';
 import JassHand from './JassHand';
+import {JassWyys, JassWyysType} from './JassWyys';
 
 export default abstract class JassPlayer extends Player<any> {
 
@@ -23,8 +24,11 @@ export default abstract class JassPlayer extends Player<any> {
     }
 
 
+     
     public abstract async chooseCard(choices: JassCard[]): Promise<JassCard>;
     public abstract async askForScore(rangeMin: number, rangeMax: number): Promise<number>;
     public abstract async chooseStichOrder<G, T extends (JassStichOrder | G)>(choices: T[]): Promise<T>;
-
+    
+    public abstract async chooseToWyys(wyys: JassWyys): Promise<boolean>;
+    public abstract async chooseWhatToWyys(wyys: JassWyys[]): Promise<JassWyys[]>;
 }
