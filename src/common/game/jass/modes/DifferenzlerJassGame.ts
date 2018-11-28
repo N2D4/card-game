@@ -1,7 +1,5 @@
-import CardDeck from 'common/game/CardDeck';
 import { JassCard } from 'common/game/jass/JassCard';
 import JassGame from 'common/game/jass/JassGame';
-import JassHand from 'common/game/jass/JassHand';
 import JassStich from 'common/game/jass/JassStich';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
 import { random } from 'common/utils';
@@ -18,6 +16,10 @@ export default class DifferenzlerJassGame extends JassGame {
         // Prepare players
         const numberOfRounds: number = await this.preparePlayers();
 
+        // Choose starting player (randomly)
+        const startingPlayer = random(this.players);
+        this.broadcast(["startingPlayer", startingPlayer]);
+        
 
         // Choose Trumpf
         const trumpf: JassStichOrder = random(JassStichOrder.colors());
@@ -30,7 +32,7 @@ export default class DifferenzlerJassGame extends JassGame {
 
 
         // Play the rounds
-        let lastWinner: JassPlayer = random(this.players);
+        let lastWinner: JassPlayer = startingPlayer;
         for (let i = 0; i < numberOfRounds; i++) {
             // Create and broadcast the Stich object
             const stich = new JassStich(trumpf);

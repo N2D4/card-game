@@ -86,17 +86,18 @@ export default class NetworkJassPlayer extends JassPlayer {
     }
 
     public async askForScore(rangeMin: number, rangeMax: number): Promise<number> {
-        return await this.askIntRange("guessScore", rangeMin, rangeMax);
+        return await this.askIntRange("guessScore", rangeMin, rangeMax + 1);
     }
 
     public async chooseStichOrder<G, T extends JassStichOrder | G>(choices: T[]): Promise<T> {
         return await this.askChoose("chooseTrumpf", choices);
     }
 
-    public async chooseToWyys(wyys: JassWyys): Promise<boolean> {
+    public async chooseToWyys(wyys: JassWyys[]): Promise<boolean> {
         return await this.ask("youWannaWyys", wyys, Boolean);
     }
     
+    // TODO Remove?? Seems like this has been removed from JassPlayer
     public async chooseWhatToWyys(wyys: JassWyys[]): Promise<JassWyys[]> {
         return await this.ask("whatToWyys", wyys, arr => arr.map((i: number) => wyys[i]).filter((a: JassWyys) => a !== undefined));
     }

@@ -33,4 +33,9 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IS
         gameState.push(Serializer.serialize(message));
     }
 
+    // TODO: Delet this; it's only for backwards compatibility so JassGames that aren't updated yet still compile
+    public broadcastB(...args: any[]) {
+        throw new Error("Removed feature; use new broadcast API");
+    }
+
 }

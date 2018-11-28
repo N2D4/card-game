@@ -21,7 +21,7 @@ export default class CoiffeurJassGame extends JassGame {
         // find player with roesle 7 if starting player is undefined
         if (this.startingPlayer === undefined)
             this.startingPlayer = this.players.filter(p => p.hand.contains(JassCard.getRoesle7()))[0];
-        this.broadcast(this.startingPlayer);
+        this.broadcastB(this.startingPlayer);
         
         // Choose Trumpf
         let trumpf: (JassStichOrder | "schieb") = "schieb";
@@ -31,7 +31,7 @@ export default class CoiffeurJassGame extends JassGame {
                 order.push("schieb");
             }
             trumpf = await this.startingPlayer.chooseStichOrder(order);
-            this.broadcast(trumpf);
+            this.broadcastB(trumpf);
         }
 
         // Play the rounds
@@ -39,7 +39,7 @@ export default class CoiffeurJassGame extends JassGame {
         for (let i = 0; i < numberOfRounds; i++) {
             // Create and broadcast the Stich object
             const stich = new JassStich(trumpf);
-            this.broadcast(stich);
+            this.broadcastB(stich);
 
             for (let j = 0; j < this.players.length; j++) {
                 // Select player
@@ -57,7 +57,7 @@ export default class CoiffeurJassGame extends JassGame {
 
                 // Send a broadcast signal so that game state is updated on all clients
                 // We've already broadcasted the same stich object so don't need to do that again
-                this.broadcast();
+                this.broadcastB();
             }
             lastWinner = stich.getWinner();
             lastWinner.currentScore += stich.getScore();
@@ -76,8 +76,8 @@ export default class CoiffeurJassGame extends JassGame {
 
 
         // Broadcast ranking
-        this.broadcast(ranking);
-        this.broadcast(trumpf.getScoreMultiplier());
+        this.broadcastB(ranking);
+        this.broadcastB(trumpf.getScoreMultiplier());
 
 
         // Next player
