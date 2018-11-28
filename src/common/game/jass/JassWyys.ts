@@ -18,6 +18,15 @@ export class JassWyys {
             return a.getScore() - b.getScore();
     }
 
+    public static sum(a: JassWyys[]): number {
+        let res = 0;
+        a.forEach(wyys => {
+            res += wyys.getScore();
+        });
+
+        return res;
+    }
+
     public getScore(): number {
         switch (this.type) {
             case JassWyysType.DREIBLATT:

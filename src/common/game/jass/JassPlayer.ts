@@ -29,6 +29,5 @@ export default abstract class JassPlayer extends Player<any> {
     public abstract async askForScore(rangeMin: number, rangeMax: number): Promise<number>;
     public abstract async chooseStichOrder<G, T extends (JassStichOrder | G)>(choices: T[]): Promise<T>;
     
-    public abstract async chooseToWyys(wyys: JassWyys): Promise<boolean>;
-    public abstract async chooseWhatToWyys(wyys: JassWyys[]): Promise<JassWyys[]>;
+    public abstract async chooseToWyys(wyys: JassWyys[]): Promise<boolean>;
 }
