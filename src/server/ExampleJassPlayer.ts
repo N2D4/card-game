@@ -1,6 +1,7 @@
 import {JassCard, JassColor, JassType} from 'common/game/jass/JassCard';
 import JassPlayer from 'common/game/jass/JassPlayer';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
+import {JassWyys, JassWyysType} from 'src/common/game/jass/JassWyys';
 import { random } from 'src/common/utils';
 import util from 'util';
 
@@ -19,6 +20,10 @@ export default class ExampleJassPlayer extends JassPlayer {
         console.log("Chose:");
         console.log(rnd);
         return rnd;
+    }
+
+    public async chooseToWyys(options: JassWyys[]): Promise<boolean> {
+        return true;
     }
     
     public async askForScore(rangeMin: number, rangeMax: number): Promise<number> {
