@@ -1,19 +1,28 @@
-import Packet from 'common/serialize/Packet';
-
-interface ISerializer<T> {
-    readonly uniqueSerializationId: string;
-    serialize(t: T): Packet;
-    deserialize(packet: Packet): T;
-}
+import ISerializable from './ISerializable';
 
 export default class Serializer {
-    private static serializers: {[key: string]: ISerializer<any>} = {};
-
-    public static register(serializer: ISerializer<any>): void {
-        this.serializers[serializer.uniqueSerializationId] = serializer;
-    }
-
-    public static deserialize(serializationId: string, packet: Packet): any {
-        return this.serializers[serializationId].deserialize(packet);
+    public static serialize(serializable: ISerializable): ISerializable {
+        switch (typeof serializable) {
+            case "number":
+            case "string":
+            case "boolean":
+                return serializable;
+            case "object":
+                if (typeof serializable.serialize === "function") {
+                    return Serializer.serialize(serializable.serialize());
+                }
+                if (Array.isArray(serializable)) {
+                    return serializable.map(el => Serializer.serialize(el));
+                } else {
+                    const nser: {[key: string]: ISerializable} = {};
+                    for (const [key, val] of Object.entries(serializable)) {
+                        nser[key] = Serializer.serialize(val);
+                    }
+                    return nser;
+                }
+            default:
+                return undefined;
+        }
     }
 }
+

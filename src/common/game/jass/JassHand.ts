@@ -1,3 +1,4 @@
+import ISerializable from 'src/common/serialize/ISerializable';
 import {JassCard, JassColor, JassType} from './JassCard';
 import JassStich from './JassStich';
 import {JassWyys, JassWyysType} from './JassWyys';
@@ -5,6 +6,10 @@ import {JassWyys, JassWyysType} from './JassWyys';
 export default class JassHand {
     public constructor(public readonly cards: JassCard[]) {
         this.cards.sort(JassCard.lexicographicCompare);
+    }
+
+    public serialize(): ISerializable {
+        return this.cards;
     }
 
     public getPlayable(stich: JassStich) {

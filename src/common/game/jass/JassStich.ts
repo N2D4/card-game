@@ -1,12 +1,17 @@
+import ISerializable from 'src/common/serialize/ISerializable';
 import {JassCard, JassColor, JassType} from './JassCard';
 import JassHand from './JassHand';
-import JassPlayer from './JassPlayer';
 import JassStichOrder from './JassStichOrder';
+import JassPlayer from './players/JassPlayer';
 
 export default class JassStich {
     public readonly cards: Array<{player: JassPlayer, card: JassCard}> = [];
 
     public constructor(public readonly trumpf: JassStichOrder) { }
+
+    public serializable(): ISerializable {
+        return this.cards;
+    }
 
     public size(): number {
         return this.cards.length;

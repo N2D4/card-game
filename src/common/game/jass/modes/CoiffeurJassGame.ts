@@ -2,10 +2,10 @@ import CardDeck from 'common/game/CardDeck';
 import { JassCard } from 'common/game/jass/JassCard';
 import JassGame from 'common/game/jass/JassGame';
 import JassHand from 'common/game/jass/JassHand';
-import JassPlayer from 'common/game/jass/JassPlayer';
 import JassStich from 'common/game/jass/JassStich';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
 import { random } from 'common/utils';
+import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 
 export default class CoiffeurJassGame extends JassGame {
 

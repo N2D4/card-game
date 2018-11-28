@@ -1,5 +1,6 @@
 import Card from "common/game/Card";
 import { range } from "common/utils";
+import ISerializable from "src/common/serialize/ISerializable";
 import CardDeck from "../CardDeck";
 
 
@@ -41,6 +42,14 @@ export class JassCard extends Card {
         } else {
             return a.type - b.type;
         }
+    }
+
+    public serialize(): ISerializable {
+        return [this.color, this.type];
+    }
+
+    public toString(): string {
+        return this.color.toString() + " " + this.type.toString();
     }
 }
 

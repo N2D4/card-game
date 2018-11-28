@@ -2,3 +2,8 @@ body {
     background-color: pink;
     color: yellow;
 }
+
+#outarea {
+    color: black;
+    white-space: pre;
+}

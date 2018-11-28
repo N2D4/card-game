@@ -32,6 +32,9 @@
         "no-empty-interface": false,
         "no-namespace": false,
         "curly": false,
-        "max-line-length": false
+        "max-line-length": false,
+        "no-var-requires": false,
+        "object-literal-shorthand": false,
+        "no-bitwise": false
     }
 }

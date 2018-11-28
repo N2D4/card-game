@@ -1,6 +1,9 @@
-import {JassCard, JassColor, JassType} from 'common/game/jass/JassCard';
-import JassPlayer from 'common/game/jass/JassPlayer';
+// tslint:disable:no-console
+
+import { JassCard } from 'common/game/jass/JassCard';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
+import { JassWyys } from 'common/game/jass/JassWyys';
+import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import { random } from 'src/common/utils';
 import util from 'util';
 
@@ -8,6 +11,13 @@ export default class ExampleJassPlayer extends JassPlayer {
 
     public constructor(public readonly name: string) {
         super();
+    }
+
+    public chooseToWyys(wyys: JassWyys): Promise<boolean> {
+        throw new Error("Method not implemented.");
+    }
+    public chooseWhatToWyys(wyys: JassWyys[]): Promise<JassWyys[]> {
+        throw new Error("Method not implemented.");
     }
 
     public async chooseCard(choices: JassCard[]): Promise<JassCard> {

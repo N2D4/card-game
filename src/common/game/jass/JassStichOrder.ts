@@ -1,8 +1,11 @@
+import ISerializable from 'src/common/serialize/ISerializable';
 import {JassCard, JassColor, JassType} from './JassCard';
 
 export default abstract class JassStichOrder {
 
-    private static Dummy = class extends JassStichOrder { };
+    private static Dummy = class extends JassStichOrder {
+        public serialize(): ISerializable { return "dummy"; }
+    };
 
     private static Obenabe = class extends JassStichOrder {
         public getScore(card: JassCard) {
@@ -14,6 +17,10 @@ export default abstract class JassStichOrder {
 
         public getScoreMultiplier(): number {
             return 3;
+        }
+
+        public serialize(): ISerializable {
+            return "OBENABE";
         }
     };
 
@@ -33,6 +40,10 @@ export default abstract class JassStichOrder {
 
         public getScoreMultiplier(): number {
             return 3;
+        }
+
+        public serialize(): ISerializable {
+            return "UNNEUFFE";
         }
     };
 
@@ -75,6 +86,10 @@ export default abstract class JassStichOrder {
 
         public getScoreMultiplier(): number {
             return (this.color === JassColor.SCHILTE || this.color === JassColor.SCHELLE) ? 2 : 1;
+        }
+
+        public serialize(): ISerializable {
+            return ["COLOR", this.color];
         }
     };
 
@@ -144,5 +159,7 @@ export default abstract class JassStichOrder {
     public getScoreMultiplier(): number {
         return 1;
     }
+
+    public abstract serialize(): ISerializable;
 
 }

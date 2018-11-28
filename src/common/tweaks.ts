@@ -1,3 +1,5 @@
+// tslint:disable:no-console
+
 try {
     require('babel-polyfill');
 } catch (e) {

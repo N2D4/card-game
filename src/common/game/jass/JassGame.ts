@@ -1,9 +1,13 @@
 import CardDeck from 'common/game/CardDeck';
 import CardGame from 'common/game/CardGame';
 import { JassCard, JassColor, JassType } from 'common/game/jass/JassCard';
-import JassPlayer from 'common/game/jass/JassPlayer';
+import JassPlayer from 'common/game/jass/players/JassPlayer';
+import ISerializable from 'src/common/serialize/ISerializable';
+import Serializer from 'src/common/serialize/Serializer';
 
-export default abstract class JassGame extends CardGame<JassPlayer, JassCard, any, any> {
+export type JassGameEvent = [string, ISerializable] | string;
+
+export default abstract class JassGame extends CardGame<JassPlayer, JassCard, ISerializable[], JassGameEvent> {
 
     constructor(players: JassPlayer[]) {
         super(players);
@@ -21,9 +25,12 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, an
         return numberOfRounds;
     }
 
-    protected createGameState(player: JassPlayer, messages: any[]): any {
-        // TODO Improve this
-        return [messages, player];
+    protected createGameState(player: JassPlayer): ISerializable[] {
+        return [];
+    }
+
+    protected receiveMessage(player: JassPlayer, gameState: ISerializable[], message: ISerializable) {
+        gameState.push(Serializer.serialize(message));
     }
 
 }

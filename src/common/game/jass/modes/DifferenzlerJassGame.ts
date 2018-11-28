@@ -2,10 +2,10 @@ import CardDeck from 'common/game/CardDeck';
 import { JassCard } from 'common/game/jass/JassCard';
 import JassGame from 'common/game/jass/JassGame';
 import JassHand from 'common/game/jass/JassHand';
-import JassPlayer from 'common/game/jass/JassPlayer';
 import JassStich from 'common/game/jass/JassStich';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
 import { random } from 'common/utils';
+import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 
 export default class DifferenzlerJassGame extends JassGame {
 
@@ -21,12 +21,12 @@ export default class DifferenzlerJassGame extends JassGame {
 
         // Choose Trumpf
         const trumpf: JassStichOrder = random(JassStichOrder.colors());
-        this.broadcast(trumpf);
+        this.broadcast(["trumpf", trumpf]);
 
 
         // Have all players guess scores
         await this.allPlayers(p => p.guessScore(0, 157));
-        this.broadcast();
+        this.broadcast(["playerGuesses", this.players.map(p => p.guessedScore)]);
 
 
         // Play the rounds
@@ -34,7 +34,7 @@ export default class DifferenzlerJassGame extends JassGame {
         for (let i = 0; i < numberOfRounds; i++) {
             // Create and broadcast the Stich object
             const stich = new JassStich(trumpf);
-            this.broadcast(stich);
+            this.broadcast(["startstich", stich]);
 
             for (let j = 0; j < this.players.length; j++) {
                 // Select player
@@ -51,16 +51,19 @@ export default class DifferenzlerJassGame extends JassGame {
                 stich.add(player, played);
 
                 // Send a broadcast signal so that game state is updated on all clients
-                // We've already broadcasted the same stich object so don't need to do that again
-                this.broadcast();
+                this.broadcast(["playcard", played]);
             }
             lastWinner = stich.getWinner();
-            lastWinner.currentScore += stich.getScore();
+            const scorePlus = stich.getScore();
+            lastWinner.currentScore += scorePlus;
+            this.broadcast(["stichwinner", lastWinner]);
+            this.broadcast(["scoreplus", [scorePlus, lastWinner]]);
         }
 
 
         // Last stich gives bonus points
         lastWinner.currentScore += 5;
+        this.broadcast(["scoreplus", [5, lastWinner]]);
 
 
         // Create ranking
@@ -69,7 +72,7 @@ export default class DifferenzlerJassGame extends JassGame {
 
 
         // Broadcast ranking
-        this.broadcast(ranking);
+        this.broadcast(["ranking", ranking]);
 
     }
 

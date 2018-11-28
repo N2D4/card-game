@@ -16,9 +16,10 @@
     "build": "npm run build:types && npm run build:js",
     "build:types": "tsc --emitDeclarationOnly",
     "build:js": "babel src --out-dir lib --extensions \".ts,.tsx\" --source-maps inline",
-    "bundle": "rollup -c",
+    "dev-bundle": "webpack --mode=development",
+    "prod-bundle": "webpack --mode=production",
     "run": "node lib/server/main.js",
-    "start": "npm run-script build:js && npm run-script bundle && npm run-script run"
+    "start": "npm run-script build:js && npm run-script dev-bundle && npm run-script run"
   },
   "repository": {
     "type": "git",
@@ -37,15 +38,20 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-env": "^7.1.5",
     "@babel/preset-typescript": "^7.1.0",
+    "babel-loader": "^8.0.4",
     "babel-plugin-module-resolver": "^3.1.1",
-    "rollup": "^0.67.1",
-    "rollup-plugin-babel": "^4.0.3",
     "tslint": "^5.11.0",
-    "typescript": "^3.1.6"
+    "typescript": "^3.1.6",
+    "webpack": "^4.26.1",
+    "webpack-cli": "^3.1.2"
   },
   "dependencies": {
     "@types/express": "^4.16.0",
+    "@types/socket.io": "^2.1.0",
+    "@types/socket.io-client": "^1.4.32",
     "babel-polyfill": "^6.26.0",
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "socket.io": "^2.1.1",
+    "socket.io-client": "^2.1.1"
   }
 }

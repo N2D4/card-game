@@ -1,3 +1,4 @@
+import ISerializable from 'src/common/serialize/ISerializable';
 import {JassCard, JassColor, JassType} from './JassCard';
 
 
@@ -16,6 +17,10 @@ export class JassWyys {
                 return 0;
         } else 
             return a.getScore() - b.getScore();
+    }
+
+    public serialize(): ISerializable {
+        return [this.card, this.type];
     }
 
     public getScore(): number {

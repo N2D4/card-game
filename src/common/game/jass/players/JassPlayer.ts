@@ -1,11 +1,12 @@
 import CardDeck from 'common/game/CardDeck';
-import Player from 'common/players/Player';
 import JassStichOrder from 'src/common/game/jass/JassStichOrder';
-import { JassCard, JassColor, JassType } from './JassCard';
-import JassHand from './JassHand';
-import {JassWyys, JassWyysType} from './JassWyys';
+import Player from 'src/common/game/Player';
+import ISerializable from 'src/common/serialize/ISerializable';
+import { JassCard, JassColor, JassType } from '../JassCard';
+import JassHand from '../JassHand';
+import {JassWyys, JassWyysType} from '../JassWyys';
 
-export default abstract class JassPlayer extends Player<any> {
+export default abstract class JassPlayer extends Player<ISerializable[]> {
 
     public hand: JassHand = new JassHand([]);
     public guessedScore: number = -1;
@@ -21,6 +22,10 @@ export default abstract class JassPlayer extends Player<any> {
 
     public async guessScore(rangeMin: number, rangeMax: number): Promise<void> {
         this.guessedScore = await this.askForScore(rangeMin, rangeMax);
+    }
+
+    public serialize(): ISerializable {
+        return this.index;
     }
 
 
