@@ -2,7 +2,7 @@
 
 import { JassCard } from 'common/game/jass/JassCard';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
-import { JassWyys } from 'common/game/jass/JassWyys';
+import {JassWyys, JassWyysType} from 'src/common/game/jass/JassWyys';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import { random } from 'src/common/utils';
 import util from 'util';
@@ -11,13 +11,6 @@ export default class ExampleJassPlayer extends JassPlayer {
 
     public constructor(public readonly name: string) {
         super();
-    }
-
-    public chooseToWyys(wyys: JassWyys): Promise<boolean> {
-        throw new Error("Method not implemented.");
-    }
-    public chooseWhatToWyys(wyys: JassWyys[]): Promise<JassWyys[]> {
-        throw new Error("Method not implemented.");
     }
 
     public async chooseCard(choices: JassCard[]): Promise<JassCard> {
@@ -29,6 +22,10 @@ export default class ExampleJassPlayer extends JassPlayer {
         console.log("Chose:");
         console.log(rnd);
         return rnd;
+    }
+
+    public async chooseToWyys(options: JassWyys[]): Promise<boolean> {
+        return true;
     }
     
     public async askForScore(rangeMin: number, rangeMax: number): Promise<number> {
