@@ -1,4 +1,5 @@
 import 'common/tweaks.ts';
+import $ from 'jquery';
 import socketio from 'socket.io-client';
 
 
