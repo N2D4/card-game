@@ -96,10 +96,5 @@ export default class NetworkJassPlayer extends JassPlayer {
     public async chooseToWyys(wyys: JassWyys[]): Promise<boolean> {
         return await this.ask("youWannaWyys", wyys, Boolean);
     }
-    
-    // TODO Remove?? Seems like this has been removed from JassPlayer
-    public async chooseWhatToWyys(wyys: JassWyys[]): Promise<JassWyys[]> {
-        return await this.ask("whatToWyys", wyys, arr => arr.map((i: number) => wyys[i]).filter((a: JassWyys) => a !== undefined));
-    }
 
 }
