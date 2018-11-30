@@ -73,7 +73,7 @@ div {
 
 
 #gamecontent > #innergamecontent > #table > #jassmatwrap {
-    max-width: 55vh;
+    max-width: 55vh;    /* 100vh - ownhand.height - otherhandtop.width */
     max-height: 55vh;
     flex-grow: 1;
     
@@ -87,8 +87,8 @@ div {
 
 #gamecontent > #innergamecontent > #table > #jassmatwrap > #jassmatborder {
     position: relative;
-    width: 80%;
-    padding-bottom: 80%;
+    width: 100%;
+    padding-bottom: 100%;
 
     background-color: darkolivegreen;
     border-radius: 20px;
@@ -103,6 +103,61 @@ div {
 
     background-color: green;
     border-radius: 20px;
+}
+
+
+.own.hand > .cardholderspace {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    justify-content: center;
+}
+
+.own.hand > .cardholderspace > .cardholderwrap {
+    position: absolute;
+    width: 19.05vh;
+    max-width: 30vw;
+    height: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: bottom;
+}
+
+.own.hand > .cardholderspace > .cardholderwrap > .cardholder {
+    position: absolute;
+    bottom: 10%;
+    width: 100%;
+    padding-bottom: 140.15748%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.own .card {
+    position: absolute;
+    transform-origin: 50% 105%;
+    width: 100%;
+    height: 100%;
+}
+
+.own .card:not(.unselectable):active > .cardimg {
+    transform: translate(0%, -5%);
+}
+
+.own .card.unselectable {
+    filter: brightness(0.65);
+}
+
+.card > .cardimg {
+    background-image: url(assets/sprites/jass/cardset.png);
+    background-position: -100% -100%;
+    background-size: 1000%, 400%;
+    width: 100%;
+    height: 100%;
+    border-radius: 3.5%;
+    box-shadow: 0px 0px 2px 0px grey;
 }
 
 
