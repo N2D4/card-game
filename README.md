@@ -2,4 +2,4 @@
 
 Heavy WIP
 
-Workspace setup: `npm install`, then `npm start` to read server
+Workspace setup: `npm install`, then `npm start` to start server
