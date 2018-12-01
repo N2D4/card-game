@@ -14,6 +14,7 @@ body {
     background-color: rgb(196, 143, 0);
     color: white;
     position: fixed;
+    font-family: "Comic Sans MS";
     top: 0;
     left: 0;
     bottom: 0;
@@ -22,11 +23,18 @@ body {
     margin: 0;
 }
 
+/**
+ * Does nothing
+ */
 div {
     margin: 0;
     padding: 0;
 }
 
+/**
+ * Container flexbox.
+ * Splits body into three parts, .other.hand.top, #innergamecontent and .own.hand
+ */
 #gamecontent {
     width: 100%;
     height: 100%;
@@ -36,16 +44,26 @@ div {
     align-items: stretch;
 }
 
+/**
+ * Specify size of .own.hand
+ */
 #gamecontent > .own.hand {
     height: 35%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap */
     background-color: rebeccapurple;
 }
 
-#gamecontent > .other.hand {
+/**
+ * Specify size of .other.hand.top
+ */
+#gamecontent > .other.hand.top {
     height: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > #innergamecontent > .other.hand */
     background-color: red;
 }
 
+/**
+ * Container flexbox.
+ * Splits middle part of body into three parts, .other.hand.left, #table and .other.hand.right
+ */
 #gamecontent > #innergamecontent {
     flex-grow: 1;
     background-color: green;
@@ -56,35 +74,71 @@ div {
     align-items: stretch;
 }
 
+/**
+ * Specify size for .other.hand.left and .other.hand.right (but not .other.hand.top)
+ */
 #gamecontent > #innergamecontent > .other.hand {
     width: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > .other.hand */
     background-color: blue;
 }
 
+/**
+ * Container flexbox for the table, or just the jassmat in this case.
+ * Used to center the jassmat.
+ */
 #gamecontent > #innergamecontent > #table {
     flex-grow: 1;
     background-color: rgb(196, 143, 0);
 
     display: flex;
     justify-content: center;
-    align-items: stretch;
 }
 
-
-
+/**
+ * Container whose width is the smaller of max available width and max available height.
+ *
+ *     max-width = 55% * viewport.height   // max available height
+ *     width = parent.width                // max available width
+ *     calculatedWidth = min(width, max-width)
+ *
+ * The width of this container is the side length of the largest fitting square. We need this length in #jassmatborder.
+ */
 #gamecontent > #innergamecontent > #table > #jassmatwrap {
     max-width: 55vh;    /* 100vh - ownhand.height - otherhandtop.width */
-    max-height: 55vh;
-    flex-grow: 1;
+    width: 100%;
     
     background-color: yellow;
 
     display: flex;
-    justify-content: center;
     align-items: center;
 }
 
-
+/**
+ * The maximum size square container that fits into #table.
+ * Due to a weirdness in the specification, using percentages in padding-bottom (and top) actually refers to the parent
+ * width instead of height. This way, we can "translate" widths to heights.
+ * 
+ * Essentially, what we want is something like this:
+ *
+ *     calculatedWidth = calculatedHeight = min(maxAvailableWidth, maxAvailableHeight)
+ *
+ * While replicating the min function is not particularly hard (by setting both maxWidth and width), feeding it both a
+ * width and a height argument turns out to be somewhat tricky, as there are only a few ways to set the height of an
+ * element to another element's width. One of the ways to do so is the viewport-based units (vw, vh, vmin and vmax),
+ * which allow us to set the width of an element to the height of the entire page. Another is padding-bottom, thanks to
+ * the weirdness detailed above. So, essentially, what our CSS does is:
+ *     
+ *     #jassmatwrap.max-width = 55% * viewport.height
+ *     #jassmatwrap.width = #table.calculatedWidth
+ *     #jassmatwrap.calculatedWidth = min(#jassmatwrap.width, #jassmatwrap.max-width) // + padding, but that's 0 here
+ *     
+ *     #jassmatborder.width = 100% * #jassmatwrap.calculatedWidth
+ *     #jassmatborder.height = 0
+ *     #jassmatborder.padding-bottom = 100% * #jassmatwrap.calculatedWidth
+ *     #jassmatborder.calculatedHeight = #jassmatborder.height + #jassmatborder.padding-bottom
+ *
+ * For reference, another way to achieve the same result is to scale up a 1x1 image (or SVG element).
+ */
 #gamecontent > #innergamecontent > #table > #jassmatwrap > #jassmatborder {
     position: relative;
     width: 100%;
@@ -94,6 +148,10 @@ div {
     border-radius: 20px;
 }
 
+/**
+ * Border thickness can't be a percentage, so we replicate the behaviour by just creating a slightly smaller and
+ * differently colored #jassmat element inside of #jassmatborder.
+ */
 #jassmat {
     position: absolute;
     top: 2.5%;
@@ -105,8 +163,10 @@ div {
     border-radius: 20px;
 }
 
-
-.own.hand > .cardholderspace {
+/**
+ * The player hand. Flexbox containing .cardholderwrap (centered horizontally)
+ */
+.own.hand {
     position: relative;
     width: 100%;
     height: 100%;
@@ -115,45 +175,68 @@ div {
     justify-content: center;
 }
 
-.own.hand > .cardholderspace > .cardholderwrap {
+/**
+ * Container whose width is min(20% * viewport.height, 34 * viewport.width)
+ * See #jassmatwrap and #jassmatborder
+ */
+.own.hand > .cardholderwrap {
     position: absolute;
-    width: 19.05vh;
-    max-width: 30vw;
+    width: 20vh;
+    max-width: 34vw;
     height: 100%;
-
-    display: flex;
-    justify-content: center;
-    align-items: bottom;
+    transform: translate(5%, 0%);
 }
 
-.own.hand > .cardholderspace > .cardholderwrap > .cardholder {
+/**
+ * Container with the size of a card, aspect ratio 127/178 (a card).
+ *
+ *     calculatedWidth = min(20 * viewport.height, 34 * viewport.width)
+ *     calculatedHeight = 178/127 * min(20 * viewport.height, 34 * viewport.width)
+ *
+ * See #jassmatborder.
+ *
+ * Additionally, this container is moved up by a bit (10%).
+ */
+.own.hand > .cardholderwrap > .cardholder {
     position: absolute;
     bottom: 10%;
     width: 100%;
     padding-bottom: 140.15748%;
-    margin-left: auto;
-    margin-right: auto;
 }
 
+/**
+ * The cards should take the same width as .cardholder, rotate around a point 5% below their bottom center, and not
+ * receive the ugly grey frame when tapped on iOS.
+ */
 .own .card {
     position: absolute;
     transform-origin: 50% 105%;
     width: 100%;
     height: 100%;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
-.own .card:not(.unselectable):active > .cardimg {
+/**
+ * If the user hovers over a card, move the underlying image up by 5%.
+ */
+.own .card:not(.unselectable):hover > .cardimg {
     transform: translate(0%, -5%);
 }
 
+/**
+ * Darken out cards that can't be selected
+ */
 .own .card.unselectable {
     filter: brightness(0.65);
 }
 
+/**
+ * Background of each card is the spritesheet. Border radius 3.5%, and a tiny shadow
+ */
 .card > .cardimg {
+    background-color: white;
     background-image: url(assets/sprites/jass/cardset.png);
-    background-position: -100% -100%;
-    background-size: 1000%, 400%;
+    background-size: 1000% 400%;
     width: 100%;
     height: 100%;
     border-radius: 3.5%;
@@ -162,3 +245,46 @@ div {
 
 
 
+
+/**
+ * Cards
+ */
+.card.schelle.sechs > .cardimg      { background-position:    0%    0%; }
+.card.schelle.sieben > .cardimg     { background-position: -100%    0%; }
+.card.schelle.acht > .cardimg       { background-position: -200%    0%; }
+.card.schelle.neun > .cardimg       { background-position: -300%    0%; }
+.card.schelle.zehn > .cardimg       { background-position: -400%    0%; }
+.card.schelle.under > .cardimg      { background-position: -500%    0%; }
+.card.schelle.ober > .cardimg       { background-position: -600%    0%; }
+.card.schelle.koenig > .cardimg     { background-position: -700%    0%; }
+.card.schelle.ass > .cardimg        { background-position: -800%    0%; }
+
+.card.eichel.sechs > .cardimg       { background-position:    0% -100%; }
+.card.eichel.sieben > .cardimg      { background-position: -100% -100%; }
+.card.eichel.acht > .cardimg        { background-position: -200% -100%; }
+.card.eichel.neun > .cardimg        { background-position: -300% -100%; }
+.card.eichel.zehn > .cardimg        { background-position: -400% -100%; }
+.card.eichel.under > .cardimg       { background-position: -500% -100%; }
+.card.eichel.ober > .cardimg        { background-position: -600% -100%; }
+.card.eichel.koenig > .cardimg      { background-position: -700% -100%; }
+.card.eichel.ass > .cardimg         { background-position: -800% -100%; }
+
+.card.roesle.sechs > .cardimg       { background-position:    0% -200%; }
+.card.roesle.sieben > .cardimg      { background-position: -100% -200%; }
+.card.roesle.acht > .cardimg        { background-position: -200% -200%; }
+.card.roesle.neun > .cardimg        { background-position: -300% -200%; }
+.card.roesle.zehn > .cardimg        { background-position: -400% -200%; }
+.card.roesle.under > .cardimg       { background-position: -500% -200%; }
+.card.roesle.ober > .cardimg        { background-position: -600% -200%; }
+.card.roesle.koenig > .cardimg      { background-position: -700% -200%; }
+.card.roesle.ass > .cardimg         { background-position: -800% -200%; }
+
+.card.schilte.sechs > .cardimg      { background-position:    0% -300%; }
+.card.schilte.sieben > .cardimg     { background-position: -100% -300%; }
+.card.schilte.acht > .cardimg       { background-position: -200% -300%; }
+.card.schilte.neun > .cardimg       { background-position: -300% -300%; }
+.card.schilte.zehn > .cardimg       { background-position: -400% -300%; }
+.card.schilte.under > .cardimg      { background-position: -500% -300%; }
+.card.schilte.ober > .cardimg       { background-position: -600% -300%; }
+.card.schilte.koenig > .cardimg     { background-position: -700% -300%; }
+.card.schilte.ass > .cardimg        { background-position: -800% -300%; }

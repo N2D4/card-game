@@ -2,7 +2,8 @@ import 'common/tweaks.ts';
 import $ from 'jquery';
 import socketio from 'socket.io-client';
 
-
+// Add touch start event listener for iOS; this allows :hover CSS selector to do its job
+document.addEventListener("touchstart", () => {}, true);
 
 const socket: SocketIOClient.Socket = socketio();
 
