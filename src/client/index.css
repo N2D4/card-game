@@ -176,13 +176,13 @@ div {
 }
 
 /**
- * Container whose width is min(20% * viewport.height, 34 * viewport.width)
+ * Container whose width is min(20% * viewport.height, 30 * viewport.width)
  * See #jassmatwrap and #jassmatborder
  */
 .own.hand > .cardholderwrap {
     position: absolute;
     width: 20vh;
-    max-width: 34vw;
+    max-width: 30vw;
     height: 100%;
     transform: translate(5%, 0%);
 }
@@ -190,8 +190,8 @@ div {
 /**
  * Container with the size of a card, aspect ratio 127/178 (a card).
  *
- *     calculatedWidth = min(20 * viewport.height, 34 * viewport.width)
- *     calculatedHeight = 178/127 * min(20 * viewport.height, 34 * viewport.width)
+ *     calculatedWidth = min(20 * viewport.height, 30 * viewport.width)
+ *     calculatedHeight = 178/127 * min(20 * viewport.height, 30 * viewport.width)
  *
  * See #jassmatborder.
  *
@@ -210,7 +210,7 @@ div {
  */
 .own .card {
     position: absolute;
-    transform-origin: 50% 105%;
+    transform-origin: 50% 115%;
     width: 100%;
     height: 100%;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
