@@ -205,7 +205,7 @@ div {
 }
 
 /**
- * The cards should take the same width as .cardholder, rotate around a point 5% below their bottom center, and not
+ * The cards should take the same width as .cardholder, rotate around a point 15% below their bottom center, and not
  * receive the ugly grey frame when tapped on iOS.
  */
 .own .card {
