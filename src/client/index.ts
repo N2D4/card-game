@@ -9,12 +9,78 @@ const socket: SocketIOClient.Socket = socketio();
 
 socket.on('gameinfo', (data: any) => {
     const str = JSON.stringify(data, undefined, 4);
-    (document.getElementById("outarea") as HTMLElement).innerText = str;
+    $("#outarea").text(str);
+
+    const ownCardHolder = $('.own.hand .cardholder');
+    ownCardHolder.empty();
+
+    const cardAngleDif = 172 / (data.hand.length + 1);
+    const cardAngleStart = -86 + cardAngleDif;
+    for (let i = 0; i < data.hand.length; i++) {
+        const card = createCard(data.hand[i]);
+        const ang = cardAngleStart + i * cardAngleDif;
+        card.css('transform', 'rotate(' + ang + 'deg)');
+        ownCardHolder.append(card);
+    }
+
+
+    const entries: Array<[string, [string, any]]> = Object.entries(data.openQuestions);
+    for (const openQuestion of entries) {
+        const qid = openQuestion[0];
+        const qtype = openQuestion[1][0];
+        const qargs = openQuestion[1][1];
+
+        switch (qtype) {
+            case 'guessScore':
+                socket.emit('answer', [qid, qargs[0]]);
+                break;
+            case 'chooseCard':
+                for (let i = 0; i < qargs.length; i++) {
+                    addCardHandler(qargs[i], () => {
+                        socket.emit('answer', [qid, i]);
+                    });
+                }
+                break;
+        }
+    }
 });
 
-const submitter: HTMLElement = document.getElementById('submit') as HTMLElement;
-submitter.addEventListener('click', event => {
+$('#submit').click(event => {
     const qid = (document.getElementById('qid') as HTMLInputElement).value;
     const resp = Number((document.getElementById('resp') as HTMLInputElement).value);
     socket.emit('answer', [qid, resp]);
 });
+
+
+function fromTypeToClassCard(type: [number, number]): [string, string] {
+    const cardTypes = ['schelle', 'roesle', 'schilte', 'eichel'];
+    const cardNums = ['', '', '', '', '', '', 'sechs', 'sieben', 'acht', 'neun', 'zehn', 'under', 'ober', 'koenig', 'ass'];
+
+    return [cardTypes[type[0]], cardNums[type[1]]];
+}
+
+function createCard(type: [number, number]): JQuery<HTMLElement> {
+    const cardimg = $('<div></div>');
+    cardimg.addClass('cardimg');
+
+    const card = $('<div></div>');
+    card.addClass('unselectable');
+    card.addClass('card');
+    const classCard = fromTypeToClassCard(type);
+    card.addClass(classCard[0]);
+    card.addClass(classCard[1]);
+    card.append(cardimg);
+
+    return card;
+}
+
+function addCardHandler(card: (JQuery<HTMLElement> | [number, number]), handler: (() => void)) {
+    if (Array.isArray(card)) {
+        card = $('.unselectable.card.' + fromTypeToClassCard(card).join('.'));
+    }
+    card.click(handler);
+    card.removeClass('unselectable');
+}
+
+
+
