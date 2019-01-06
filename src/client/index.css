@@ -164,6 +164,42 @@ div {
 }
 
 /**
+ * Container div for all cards on the jass mat. We use the following formulas to find the hard-coded values:
+ *     #matcardwrap.width = 40% * #jassmat.width
+ *     #matcardwrap.height = 178/127 * #matcardwrap.width
+ *     #matcardwrap.top = 100% - #matcardwrap.height
+ * Note that #jassmat.width == #jassmat.height.
+ */
+#jassmat > #matcardwrap {
+    position: absolute;
+    top: 43.93700787%;
+    bottom: 0%;
+    width: 40%;
+    left: 50%;
+    transform: translate(-50%, 0%);
+}
+
+/**
+ * The jass cards on the jass mat. Their rotation origin is the center of the jass mat, which can be determined as
+ * follows:
+ *     .card.transform-origin-y = (100% - 50% * jassmat.height / #matcardwrap.height) * #matcardwrap.height
+ */
+#jassmat .card {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-origin: 50% 10.81460674%;
+}
+
+/**
+ * Rotations for each of the four players
+ */
+#jassmat .card.player0 { transform: rotate(0deg); }
+#jassmat .card.player1 { transform: rotate(-90deg); }
+#jassmat .card.player2 { transform: rotate(-180deg); }
+#jassmat .card.player3 { transform: rotate(-270deg); }
+
+/**
  * The player hand. Flexbox containing .cardholderwrap (centered horizontally)
  */
 .own.hand {

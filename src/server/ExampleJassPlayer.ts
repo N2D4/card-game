@@ -7,6 +7,8 @@ import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import { random } from 'src/common/utils';
 import util from 'util';
 
+const log = /*console.log*/ (a?: any) => {};
+
 export default class ExampleJassPlayer extends JassPlayer {
 
     public constructor(public readonly name: string) {
@@ -14,13 +16,13 @@ export default class ExampleJassPlayer extends JassPlayer {
     }
 
     public async chooseCard(choices: JassCard[]): Promise<JassCard> {
-        console.log();
-        console.log("==== " + this.name + " ====");
-        console.log("Choosing card...");
-        console.log(choices);
+        log();
+        log("==== " + this.name + " ====");
+        log("Choosing card...");
+        log(choices);
         const rnd = random(choices);
-        console.log("Chose:");
-        console.log(rnd);
+        log("Chose:");
+        log(rnd);
         return rnd;
     }
 
@@ -29,31 +31,31 @@ export default class ExampleJassPlayer extends JassPlayer {
     }
     
     public async askForScore(rangeMin: number, rangeMax: number): Promise<number> {
-        console.log();
-        console.log("==== " + this.name + " ====");
-        console.log("Guessing score...");
+        log();
+        log("==== " + this.name + " ====");
+        log("Guessing score...");
         const rnd = Math.floor(Math.random() * (rangeMax - rangeMin + 1) + rangeMin);
-        console.log("Chose:");
-        console.log(rnd);
+        log("Chose:");
+        log(rnd);
         return rnd;
     }
 
     public async chooseStichOrder<G, T extends (JassStichOrder | G)>(choices: T[]): Promise<T> {
-        console.log();
-        console.log("==== " + this.name + " ====");
-        console.log("Choosing stich order...");
-        console.log(choices);
+        log();
+        log("==== " + this.name + " ====");
+        log("Choosing stich order...");
+        log(choices);
         const rnd = random(choices);
-        console.log("Chose:");
-        console.log(rnd);
+        log("Chose:");
+        log(rnd);
         return rnd;
     }
 
     public async sendGameState(state: any): Promise<void> {
-        console.log();
-        console.log("==== " + this.name + " ====");
-        console.log("Received message");
-        console.log(util.inspect(state, {showHidden: true, depth: 6}));
+        log();
+        log("==== " + this.name + " ====");
+        log("Received message");
+        log(util.inspect(state, {showHidden: true, depth: 6}));
     }
     
 }

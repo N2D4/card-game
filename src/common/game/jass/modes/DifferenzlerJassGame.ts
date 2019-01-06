@@ -2,7 +2,7 @@ import { JassCard } from 'common/game/jass/JassCard';
 import JassGame from 'common/game/jass/JassGame';
 import JassStich from 'common/game/jass/JassStich';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
-import { random } from 'common/utils';
+import { random, wait } from 'common/utils';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 
 export default class DifferenzlerJassGame extends JassGame {
@@ -30,15 +30,20 @@ export default class DifferenzlerJassGame extends JassGame {
         await this.allPlayers(p => p.guessScore(0, 157));
         this.broadcast(["playerGuesses", this.players.map(p => p.guessedScore)]);
 
+        // Wait for all players and animations
+        await wait(1500);
 
         // Play the rounds
         let lastWinner: JassPlayer = startingPlayer;
         for (let i = 0; i < numberOfRounds; i++) {
-            // Create and broadcast the Stich object
+            // Create the stich object
             const stich = new JassStich(trumpf);
-            this.broadcast(["startstich", stich]);
 
+            this.broadcast("startstich");
             for (let j = 0; j < this.players.length; j++) {
+                // Broadcast the stich
+                this.broadcast(["stichinfo", stich]);
+
                 // Select player
                 const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
 
@@ -54,12 +59,18 @@ export default class DifferenzlerJassGame extends JassGame {
 
                 // Send a broadcast signal so that game state is updated on all clients
                 this.broadcast(["playcard", played]);
+
+                // Wait for animations
+                await wait(500);
             }
             lastWinner = stich.getWinner();
             const scorePlus = stich.getScore();
             lastWinner.currentScore += scorePlus;
             this.broadcast(["stichwinner", lastWinner]);
             this.broadcast(["scoreplus", [scorePlus, lastWinner]]);
+
+            // Wait for animations
+            await wait(1500);
         }
 
 

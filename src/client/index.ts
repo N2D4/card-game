@@ -23,6 +23,18 @@ socket.on('gameinfo', (data: any) => {
         ownCardHolder.append(card);
     }
 
+    if (data.gameState !== undefined) {
+        if (data.gameState.stich !== undefined) {
+            const jassmatHolder = $("#matcardwrap");
+            jassmatHolder.empty();
+            for (const cardp of data.gameState.stich) {
+                const card = createCard(cardp.card);
+                card.addClass('player' + cardp.player);
+                jassmatHolder.append(card);
+            }
+        }
+    }
+
 
     const entries: Array<[string, [string, any]]> = Object.entries(data.openQuestions);
     for (const openQuestion of entries) {
