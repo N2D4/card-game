@@ -2,6 +2,8 @@ import 'common/tweaks.ts';
 import $ from 'jquery';
 import socketio from 'socket.io-client';
 
+(window as unknown as {jQuery: any}).jQuery = $;
+
 // Add touch start event listener for iOS; this allows :hover CSS selector to do its job
 document.addEventListener("touchstart", () => {}, true);
 
@@ -10,18 +12,52 @@ const socket: SocketIOClient.Socket = socketio();
 socket.on('gameinfo', (data: any) => {
     const str = JSON.stringify(data, undefined, 4);
     $("#outarea").text(str);
+    console.log(str);
+
+
+
+
 
     const ownCardHolder = $('.own.hand .cardholder');
-    ownCardHolder.empty();
 
     const cardAngleDif = 172 / (data.hand.length + 1);
     const cardAngleStart = -86 + cardAngleDif;
+    const ownCardArray = ownCardHolder.find('.card').toArray();
+    let oldCardIter = -1;
+    let lastCard;
     for (let i = 0; i < data.hand.length; i++) {
-        const card = createCard(data.hand[i]);
+        let card: JQuery<HTMLElement> | undefined;
+        for (let j = oldCardIter + 1; j < ownCardArray.length; j++) {
+            if (fromTypeToClassCard(data.hand[i]).every(a => ownCardArray[j].classList.contains(a))) {
+                card = $(ownCardArray[j]);
+                card.addClass('unselectable');
+                card.off('click');
+                for (let k = oldCardIter + 1; k < j; k++) {
+                    (ownCardArray[k].parentNode as Node).removeChild(ownCardArray[k]);
+                }
+                oldCardIter = j;
+                break;
+            }
+        }
+
+        if (card === undefined) {
+            card = createCard(data.hand[i]);
+            if (lastCard === undefined) card.prependTo(ownCardHolder);
+            else card.insertAfter(lastCard);
+        }
+
         const ang = cardAngleStart + i * cardAngleDif;
         card.css('transform', 'rotate(' + ang + 'deg)');
-        ownCardHolder.append(card);
+
+        lastCard = card;
     }
+    for (let k = oldCardIter + 1; k < ownCardArray.length; k++) {
+        (ownCardArray[k].parentNode as Node).removeChild(ownCardArray[k]);
+    }
+
+
+
+
 
     if (data.gameState !== undefined) {
         if (data.gameState.stich !== undefined) {
@@ -34,6 +70,9 @@ socket.on('gameinfo', (data: any) => {
             }
         }
     }
+
+
+
 
 
     const entries: Array<[string, [string, any]]> = Object.entries(data.openQuestions);
