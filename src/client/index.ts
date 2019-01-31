@@ -12,7 +12,6 @@ const socket: SocketIOClient.Socket = socketio();
 socket.on('gameinfo', (data: any) => {
     const str = JSON.stringify(data, undefined, 4);
     $("#outarea").text(str);
-    console.log(str);
 
 
 
