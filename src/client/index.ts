@@ -34,20 +34,20 @@ socket.on('gameinfo', (data: any) => {
 
 
                 // Set starting point of animation
-                card.css('transition', 'none');
+                card.css('transition', '0s color');
                 if (playerName === 'player0') {
                     const existing = $('.player0.hand .card.' + fromTypeToClassCard(cardp.card).join('.'));
                     if (existing.length >= 1) {
                         card.css('width', existing.css('width'));
                         card.css('height', existing.css('height'));
-                        const oldOriginArr = existing.css('transform-origin').split(' ').map(a => parseFloat(a));
-                        const newOrigin = { left: existing.width() as number / 2, top: existing.height() as number / 2 };
-                        const originDif = [oldOriginArr[0] - newOrigin.left, oldOriginArr[1] - newOrigin.top];
-                        card.css('transform', "translate(" + originDif[0] + "px, " + originDif[1] + "px) " + existing.css('transform') + " translate(-" + originDif[0] + "px, -" + originDif[1] + "px)");
-                        card.css('transform-origin', '50% 50%');
+                        card.css('transform', existing.css('transform'));
+                        card.css('transform-origin', '50% 0%');
                         card.offset(existing.offset() as {top: number, left: number});
                     }
                 }
+
+                // Make sure our transition changes went through
+                forceReflow(card);
 
                 // Do the animation
                 card.css('transition', '');
@@ -56,6 +56,7 @@ socket.on('gameinfo', (data: any) => {
                 card.css('left', '');
                 card.css('top', '');
                 card.css('transform', '');
+                card.css('transform-origin', '');
             }
         }
     }
@@ -174,5 +175,23 @@ function changeMatrixOrigin(matrix: number[], oldOrigin: {left: number, top: num
     return [m[0], m[1], m[2], m[3], x0 - m[0] * x0 - m[2] * y0, y0 - m[1] * x0 - m[3] * y0];
 }
 
+
+
+// tslint:disable-next-line:variable-name
+let _reflowForceDumpster = 0;
+function forceReflow(element: JQuery<HTMLElement>) {
+    // At least one (probably all) of the following should work
+    element.each((_, a) => { _reflowForceDumpster += a.offsetHeight; });
+    element.each((_, a) => { _reflowForceDumpster += a.scrollTop; });
+    _reflowForceDumpster += element.css('transform').length;
+    _reflowForceDumpster %= 500000;
+
+    // Make sure this method isn't getting optimized out (it shouldn't, but who knows?)
+    for (let i = 0; "." + i !== ".100"; i++) {
+        if (Math.random() < 0.99) return;
+    }
+    // tslint:disable-next-line:no-console
+    console.log("yeah you win the lottery gg " + _reflowForceDumpster);
+}
 
 
