@@ -17,7 +17,50 @@ socket.on('gameinfo', (data: any) => {
 
 
 
-    const ownCardHolder = $('.own.hand .cardholder');
+    const ownCardHolder = $('.player0.hand .cardholder');
+
+
+
+
+    if (data.gameState !== undefined) {
+        if (data.gameState.stich !== undefined) {
+            const jassmatHolder = $("#matcardwrap");
+            jassmatHolder.empty();
+            for (const cardp of data.gameState.stich) {
+                const card = createCard(cardp.card);
+                const playerName = 'player' + cardp.player;
+                card.addClass(playerName);
+                jassmatHolder.append(card);
+
+
+                // Set starting point of animation
+                card.css('transition', 'none');
+                if (playerName === 'player0') {
+                    const existing = $('.player0.hand .card.' + fromTypeToClassCard(cardp.card).join('.'));
+                    if (existing.length >= 1) {
+                        card.css('width', existing.css('width'));
+                        card.css('height', existing.css('height'));
+                        const oldOriginArr = existing.css('transform-origin').split(' ').map(a => parseFloat(a));
+                        const newOrigin = { left: existing.width() as number / 2, top: existing.height() as number / 2 };
+                        const originDif = [oldOriginArr[0] - newOrigin.left, oldOriginArr[1] - newOrigin.top];
+                        card.css('transform', "translate(" + originDif[0] + "px, " + originDif[1] + "px) " + existing.css('transform') + " translate(-" + originDif[0] + "px, -" + originDif[1] + "px)");
+                        card.css('transform-origin', '50% 50%');
+                        card.offset(existing.offset() as {top: number, left: number});
+                    }
+                }
+
+                // Do the animation
+                card.css('transition', '');
+                card.css('width', '');
+                card.css('height', '');
+                card.css('left', '');
+                card.css('top', '');
+                card.css('transform', '');
+            }
+        }
+    }
+
+
 
     const cardAngleDif = 172 / (data.hand.length + 1);
     const cardAngleStart = -86 + cardAngleDif;
@@ -58,22 +101,6 @@ socket.on('gameinfo', (data: any) => {
 
 
 
-    if (data.gameState !== undefined) {
-        if (data.gameState.stich !== undefined) {
-            const jassmatHolder = $("#matcardwrap");
-            jassmatHolder.empty();
-            for (const cardp of data.gameState.stich) {
-                const card = createCard(cardp.card);
-                card.addClass('player' + cardp.player);
-                jassmatHolder.append(card);
-            }
-        }
-    }
-
-
-
-
-
     const entries: Array<[string, [string, any]]> = Object.entries(data.openQuestions);
     for (const openQuestion of entries) {
         const qid = openQuestion[0];
@@ -91,6 +118,10 @@ socket.on('gameinfo', (data: any) => {
                     });
                 }
                 break;
+            default:
+                alert("Unknown question type: " + qtype + ". Please contact the developer");
+                // tslint:disable-next-line:no-console
+                console.log(openQuestion);
         }
     }
 });
@@ -130,6 +161,17 @@ function addCardHandler(card: (JQuery<HTMLElement> | [number, number]), handler:
     }
     card.click(handler);
     card.removeClass('unselectable');
+}
+
+
+/**
+ * Takes an argument in the form of the CSS matrix() transform (2D)
+ */
+function changeMatrixOrigin(matrix: number[], oldOrigin: {left: number, top: number}, newOrigin: {left: number, top: number}): number[] {
+    const x0 = oldOrigin.left - newOrigin.left;
+    const y0 = oldOrigin.top - newOrigin.top;
+    const m = matrix;
+    return [m[0], m[1], m[2], m[3], x0 - m[0] * x0 - m[2] * y0, y0 - m[1] * x0 - m[3] * y0];
 }
 
 
