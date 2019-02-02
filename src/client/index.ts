@@ -10,18 +10,17 @@ document.addEventListener("touchstart", () => {}, true);
 const socket: SocketIOClient.Socket = socketio();
 
 socket.on('gameinfo', (data: any) => {
-    const str = JSON.stringify(data, undefined, 4);
-    $("#outarea").text(str);
-
-
-
+    // const str = JSON.stringify(data, undefined, 4);
+    // console.log(str);
 
 
     const ownCardHolder = $('.player0.hand .cardholder');
 
 
 
-
+    // Initialize cards on the jass mat
+    // Maybe we should not replace cards that are already there, or is it better if animations are cancelled when the
+    // next packet is received?
     if (data.gameState !== undefined) {
         if (data.gameState.stich !== undefined) {
             const jassmatHolder = $("#matcardwrap");
@@ -63,6 +62,7 @@ socket.on('gameinfo', (data: any) => {
 
 
 
+    // Populate the player's own hand
     const cardAngleDif = 172 / (data.hand.length + 1);
     const cardAngleStart = -86 + cardAngleDif;
     const ownCardArray = ownCardHolder.find('.card').toArray();
@@ -102,6 +102,7 @@ socket.on('gameinfo', (data: any) => {
 
 
 
+    // Answer questions asked by the server
     const entries: Array<[string, [string, any]]> = Object.entries(data.openQuestions);
     for (const openQuestion of entries) {
         const qid = openQuestion[0];
@@ -127,13 +128,10 @@ socket.on('gameinfo', (data: any) => {
     }
 });
 
-$('#submit').click(event => {
-    const qid = (document.getElementById('qid') as HTMLInputElement).value;
-    const resp = Number((document.getElementById('resp') as HTMLInputElement).value);
-    socket.emit('answer', [qid, resp]);
-});
 
-
+/**
+ * Translates a pair of numbers as received by the server into strings
+ */
 function fromTypeToClassCard(type: [number, number]): [string, string] {
     const cardTypes = ['schelle', 'roesle', 'schilte', 'eichel'];
     const cardNums = ['', '', '', '', '', '', 'sechs', 'sieben', 'acht', 'neun', 'zehn', 'under', 'ober', 'koenig', 'ass'];
@@ -141,6 +139,9 @@ function fromTypeToClassCard(type: [number, number]): [string, string] {
     return [cardTypes[type[0]], cardNums[type[1]]];
 }
 
+/**
+ * Creates a new unselectable card element from the given type
+ */
 function createCard(type: [number, number]): JQuery<HTMLElement> {
     const cardimg = $('<div></div>');
     cardimg.addClass('cardimg');
@@ -156,6 +157,9 @@ function createCard(type: [number, number]): JQuery<HTMLElement> {
     return card;
 }
 
+/**
+ * Adds the the given handler to the card object and makes it selectable
+ */
 function addCardHandler(card: (JQuery<HTMLElement> | [number, number]), handler: (() => void)) {
     if (Array.isArray(card)) {
         card = $('.unselectable.card.' + fromTypeToClassCard(card).join('.'));
@@ -179,6 +183,18 @@ function changeMatrixOrigin(matrix: number[], oldOrigin: {left: number, top: num
 
 // tslint:disable-next-line:variable-name
 let _reflowForceDumpster = 0;
+/**
+ * Okay, so because of how browsers work, disabling transitions then changing a property doesn't cause the positions to
+ * update immediately, which means that if you re-enable transitions right after might cause weird issues (such as the
+ * property still transitioning to the target state, even if transitions were disabled in the moment we changed them).
+ * 
+ * Fortunately, there are tricks to force a reflow (such as accessing offset_ or scroll_ variables of an element).
+ * Causing a reflow after changing the property but before re-enabling transitions works as a fix to our issues.
+ * 
+ * This was a weird one to debug, especially because in a good number of scenarios the reflow was triggered as a side
+ * effect by other factors. But, I found a reliable way to detect whether the debug tools are open and it seems to work
+ * cross-browser, which is nice in case I ever wanna put a Bitcoin miner somewhere. ;)
+ */
 function forceReflow(element: JQuery<HTMLElement>) {
     // At least one (probably all) of the following should work
     element.each((_, a) => { _reflowForceDumpster += a.offsetHeight; });
@@ -186,7 +202,7 @@ function forceReflow(element: JQuery<HTMLElement>) {
     _reflowForceDumpster += element.css('transform').length;
     _reflowForceDumpster %= 500000;
 
-    // Make sure this method isn't getting optimized out (it shouldn't, but who knows?)
+    // Make sure this method isn't getting optimized out (not that I expect compilers to be THAT advanced but who knows)
     for (let i = 0; "." + i !== ".100"; i++) {
         if (Math.random() < 0.99) return;
     }
