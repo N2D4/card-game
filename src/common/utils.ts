@@ -13,6 +13,7 @@ export function random<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
+// TODO Use an unpredictable random generator
 export function pseudoUUID(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
       const r: number = Math.random() * 16 | 0;

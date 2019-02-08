@@ -7,42 +7,104 @@ import socketio from 'socket.io-client';
 // Add touch start event listener for iOS; this allows :hover CSS selector to do its job
 document.addEventListener("touchstart", () => {}, true);
 
+$('#slider').on('input', () => {
+    $('#slider-value').text($('#slider').val() as string);
+});
+
+$('#score').click((e) => {
+    $('#score').hide();
+});
+
+$('.toggle-scoreboard').click((e) => {
+    $('#score').show();
+});
+
+$('.pop-up-window-container').hide();
+
 const socket: SocketIOClient.Socket = socketio();
 
 socket.on('gameinfo', (data: any) => {
-    // const str = JSON.stringify(data, undefined, 4);
-    // console.log(str);
+    const str = JSON.stringify(data, undefined, 4);
+    // tslint:disable-next-line:no-console
+    console.log(str);
 
 
     const ownCardHolder = $('.player0.hand .cardholder');
 
-
+    /**
+     * Translates an id sent by the server (from 0-3, where the own player could be any of the four) into an id used
+     * in the CSS (where 0 is bottom, 1 is left, 2 is top, 3 is right, and 0 is always the player himself)
+     */
+    function tplayer(pindex: number) {
+        const pcount = data.gameState.playerHandSizes.length;
+        return ((pindex - data.ownid) % pcount + pcount) % pcount;
+    }
 
     // Initialize cards on the jass mat
     // Maybe we should not replace cards that are already there, or is it better if animations are cancelled when the
     // next packet is received?
     if (data.gameState !== undefined) {
+
+        // update scoreboard
+        const scores = [0, 0, 0, 0];
+        const guesses = [0, 0, 0, 0];
+        for (const m of data.gameState.messages) {
+            if (m[0] === "scoreplus") {
+                scores[tplayer(m[1][1])] += m[1][0];
+            }
+            if (m[0] === "playerGuesses") {
+                guesses[tplayer(0)] = m[1][0];
+                guesses[tplayer(1)] = m[1][1];
+                guesses[tplayer(2)] = m[1][2];
+                guesses[tplayer(3)] = m[1][3];
+            }
+        }
+        
+        updateScore(scores, guesses);
+
+        // set trumpf icon (bottom right corner)
+        for (const m of data.gameState.messages) {
+            if (m[0] === "trumpf") {
+                const color = m[1][1];
+                const trumpf = $('#trumpf');
+                const c = fromTypeToClassCard([color, 0])[0];
+                trumpf.addClass(c);
+            }
+        }
+
         if (data.gameState.stich !== undefined) {
             const jassmatHolder = $("#matcardwrap");
-            jassmatHolder.empty();
+            let tagged = jassmatHolder.children('.card').toArray().map(a => $(a));
             for (const cardp of data.gameState.stich) {
                 const card = createCard(cardp.card);
-                const playerName = 'player' + cardp.player;
+                const playerName = 'player' + tplayer(cardp.player);
+
+                let existing = $('.card.' + fromTypeToClassCard(cardp.card).join('.'));
+                if (existing.length <= 0 && playerName !== 'player0') {
+                    existing = $('.' + playerName + '.hand .card');
+                }
+                if (existing.length >= 1) {
+                    existing = $(existing[Math.floor(Math.random() * existing.length)]);
+                    if (tagged.find(p => p.is(existing)) !== undefined) {
+                        tagged = tagged.filter(p => !p.is(existing));
+                        continue;
+                    }
+                }
+
+
                 card.addClass(playerName);
                 jassmatHolder.append(card);
 
 
                 // Set starting point of animation
                 card.css('transition', '0s color');
-                if (playerName === 'player0') {
-                    const existing = $('.player0.hand .card.' + fromTypeToClassCard(cardp.card).join('.'));
-                    if (existing.length >= 1) {
-                        card.css('width', existing.css('width'));
-                        card.css('height', existing.css('height'));
-                        card.css('transform', existing.css('transform'));
-                        card.css('transform-origin', '50% 0%');
-                        card.offset(existing.offset() as {top: number, left: number});
-                    }
+                if (existing.length >= 1) {
+                    card.css('width', existing.css('width'));
+                    card.css('height', existing.css('height'));
+                    card.css('transform', existing.css('transform'));
+                    card.css('transform-origin', '50% 0%');
+                    card.offset(existing.offset() as {top: number, left: number});
+                    existing.remove();
                 }
 
                 // Make sure our transition changes went through
@@ -57,6 +119,7 @@ socket.on('gameinfo', (data: any) => {
                 card.css('transform', '');
                 card.css('transform-origin', '');
             }
+            tagged.forEach(p => $(p).remove());
         }
     }
 
@@ -72,7 +135,7 @@ socket.on('gameinfo', (data: any) => {
         let card: JQuery<HTMLElement> | undefined;
         for (let j = oldCardIter + 1; j < ownCardArray.length; j++) {
             if (fromTypeToClassCard(data.hand[i]).every(a => ownCardArray[j].classList.contains(a))) {
-                card = $(ownCardArray[j]);
+                card = $(ownCardArray[j]) as JQuery<HTMLElement>;
                 card.addClass('unselectable');
                 card.off('click');
                 for (let k = oldCardIter + 1; k < j; k++) {
@@ -100,6 +163,30 @@ socket.on('gameinfo', (data: any) => {
 
 
 
+    // Populate the other player's hands
+    for (let i = 0; i < data.gameState.playerHandSizes.length; i++) {
+        const size = data.gameState.playerHandSizes[i];
+        const cssplayer = tplayer(i);
+        const cssplayerN = 'player' + cssplayer;
+        if (cssplayer === 0) continue;
+
+        const cardholder = $('.' + cssplayerN + '.hand .cardholder');
+        while (size < cardholder.find('.card').length) {
+            cardholder.find('.card').last().remove();
+        }
+        while (cardholder.find('.card').length < size) {
+            cardholder.append(createCard());
+        }
+        
+        const cards = cardholder.find('.card');
+        const cardAngleDifL = 172 / (size + 1);
+        const cardAngleStartL = -86 + cardAngleDifL;
+        for (let j = 0; j < size; j++) {
+            $(cards[j]).css('transform', 'rotate(' + (cardAngleStartL + j * cardAngleDifL) + 'deg)');
+        }
+    }
+
+
 
 
     // Answer questions asked by the server
@@ -111,7 +198,13 @@ socket.on('gameinfo', (data: any) => {
 
         switch (qtype) {
             case 'guessScore':
-                socket.emit('answer', [qid, qargs[0]]);
+                $('#diff').show();
+                $('#diff-button').off('click');
+                $('#diff-button').click(() => {
+                    const v = $('#slider').val() as string;
+                    socket.emit('answer', [qid, v]);
+                    $('#diff').hide();
+                });
                 break;
             case 'chooseCard':
                 for (let i = 0; i < qargs.length; i++) {
@@ -142,42 +235,36 @@ function fromTypeToClassCard(type: [number, number]): [string, string] {
 /**
  * Creates a new unselectable card element from the given type
  */
-function createCard(type: [number, number]): JQuery<HTMLElement> {
+function createCard(type?: [number, number]): JQuery<HTMLElement> {
     const cardimg = $('<div></div>');
     cardimg.addClass('cardimg');
 
     const card = $('<div></div>');
-    card.addClass('unselectable');
     card.addClass('card');
-    const classCard = fromTypeToClassCard(type);
-    card.addClass(classCard[0]);
-    card.addClass(classCard[1]);
+    if (type !== undefined) {
+        card.addClass('unselectable');
+        const classCard = fromTypeToClassCard(type);
+        card.addClass(classCard[0]);
+        card.addClass(classCard[1]);
+    }
     card.append(cardimg);
 
     return card;
 }
 
-
-function createWindow(question: string, options: string[]) {
-    const window = $('.pop-up-window');
+function updateScore(sc: number[], gs: number[]) {
+    const window = $('#score-window');
     window.empty();
+    window.append("<table>");
+    window.append('<tr><th>p1: </th> <th> guessed:' + gs[0]  + "</th><th>    score: " + sc[0] + '</th></tr>');
+    window.append('<tr><th>p2: </th> <th> guessed:' + gs[1]  + "</th><th>    score: " + sc[1] + '</th></tr>');
 
-    const text = $('<div></div>');
-    text.addClass('question');
-    window.append(text);
+    if (sc.length > 2) {
+        window.append('<tr><th>p3: </th> <th> guessed:' + gs[2]  + "</th><th>    score: " + sc[2] + '</th></tr>');
+        window.append('<tr><th>p4: </th> <th> guessed:' + gs[3]  + "</th><th>    score: " + sc[3] + '</th></tr>');
+    }
 
-    options.forEach(option => {
-        const b = createButton(option);
-        window.append(b);
-    });
-    
-}
-
-function createButton(name: string): JQuery<HTMLElement> {
-    const button = $('<div></div>');
-    button.addClass('button');
-    button.addClass(name);
-    return button;
+    window.append("</table>");
 }
 
 

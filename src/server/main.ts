@@ -2,11 +2,11 @@ import 'common/tweaks';
 
 import express from 'express';
 import pkg from 'package.json';
-import socketio, { Socket } from 'socket.io';
+import socketio from 'socket.io';
 import DifferenzlerJassGame from 'src/common/game/jass/modes/DifferenzlerJassGame';
-import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
+import { pseudoUUID } from 'src/common/utils';
 import ExampleJassPlayer from './ExampleJassPlayer';
 
 const app: express.Application = express();
@@ -31,12 +31,18 @@ const server = app.listen(port, () => {
 
 const io: socketio.Server = socketio(server);
 
-io.on('connection', (socket) => {
-    const player1: JassPlayer = new NetworkJassPlayer(socket);
-    const player2: JassPlayer = new ExampleJassPlayer("b");
-    const player3: JassPlayer = new ExampleJassPlayer("c");
-    const player4: JassPlayer = new ExampleJassPlayer("d");
+const socketQueue: socketio.Socket[] = [];
+const playerCount = 2;
 
-    const game: DifferenzlerJassGame = new DifferenzlerJassGame(player1, player2, player3, player4);
-    game.play();
+io.on('connection', (socket) => {
+    socketQueue.push(socket);
+    while (socketQueue.length >= playerCount) {
+        const arr: JassPlayer[] = socketQueue.splice(0, playerCount).map(s => new NetworkJassPlayer(s));
+        while (arr.length < 4) {
+            arr.push(new ExampleJassPlayer(pseudoUUID()));
+        }
+
+        const game: DifferenzlerJassGame = new DifferenzlerJassGame(arr[0], arr[1], arr[2], arr[3]);
+        game.play();
+    }
 });

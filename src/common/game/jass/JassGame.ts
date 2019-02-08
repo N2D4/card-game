@@ -10,6 +10,7 @@ export type JassGameEvent = [string, ISerializable] | string;
 export interface IJassGameState {
     stich: JassStich;
     messages: ISerializable[];
+    playerHandSizes: number[];
 }
 
 export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJassGameState, JassGameEvent> {
@@ -31,7 +32,11 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
     }
 
     protected createGameState(player: JassPlayer): IJassGameState {
-        return { stich: [][0], messages: [] };
+        return {
+            stich: [][0],
+            messages: [],
+            playerHandSizes: [],
+        };
     }
 
     protected receiveMessage(player: JassPlayer, gameState: IJassGameState, message: JassGameEvent) {
@@ -40,6 +45,7 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
         } else {
             gameState.messages.push(Serializer.serialize(message));
         }
+        gameState.playerHandSizes = this.players.map(p => p.hand.cards.length);
     }
 
     // TODO: Delet this; it's only for backwards compatibility so JassGames that weren't updated yet still compile

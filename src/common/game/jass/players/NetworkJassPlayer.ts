@@ -40,6 +40,7 @@ export default class NetworkJassPlayer extends JassPlayer {
 
     private sendPacketNow(additionalInfo?: ISerializable) {
         this.playerSocket.emit('gameinfo', Serializer.serialize({
+            ownid: this.index,
             hand: this.hand,
             gameState: this.curState,
             openQuestions: this.openQuestions,
