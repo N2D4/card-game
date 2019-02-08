@@ -9,7 +9,7 @@ export default class JassStich {
 
     public constructor(public readonly trumpf: JassStichOrder) { }
 
-    public serializable(): ISerializable {
+    public serialize(): ISerializable {
         return this.cards;
     }
 

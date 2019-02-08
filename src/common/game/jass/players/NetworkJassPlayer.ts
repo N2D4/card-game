@@ -2,12 +2,14 @@ import { JassCard } from "common/game/jass/JassCard";
 import JassStichOrder from "common/game/jass/JassStichOrder";
 import { JassWyys } from "common/game/jass/JassWyys";
 import Serializer from "common/serialize/Serializer";
-import { pseudoUUID } from "common/utils";
+import { pseudoUUID, wait } from "common/utils";
 import { Socket } from "socket.io";
 import ISerializable from "src/common/serialize/ISerializable";
 import JassPlayer from "./JassPlayer";
 
 export default class NetworkJassPlayer extends JassPlayer {
+    private stateWaiting: boolean = false;
+
     private playerSocket: Socket = [][0];   // [][0] = undefined, but doesn't make the compiler pissy
     private curState: any = undefined;
     private openQuestions: {[key: string]: [string, any]} = {};
@@ -36,7 +38,7 @@ export default class NetworkJassPlayer extends JassPlayer {
         });
     }
 
-    private sendPacket(additionalInfo?: ISerializable) {
+    private sendPacketNow(additionalInfo?: ISerializable) {
         this.playerSocket.emit('gameinfo', Serializer.serialize({
             hand: this.hand,
             gameState: this.curState,
@@ -45,9 +47,21 @@ export default class NetworkJassPlayer extends JassPlayer {
         }));
     }
 
+    private async sendPacket(additionalInfo?: ISerializable) {
+        await wait(0);
+        this.sendPacketNow(additionalInfo);
+    }
+
     public async sendGameState(state: any): Promise<void> {
         this.curState = state;
-        this.sendPacket();
+
+        // If we only just queued a state packet, don't queue again
+        if (this.stateWaiting) return;
+        this.stateWaiting = true;
+        await wait(0);
+        this.stateWaiting = false;
+
+        this.sendPacketNow();
     }
 
     private async ask<T>(question: string, args: ISerializable, convertFunc: ((a: any) => T) = (a => a), acceptFunc: ((t: T) => boolean) = (a => true), additionalMessage?: string): Promise<T> {

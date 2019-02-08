@@ -33,7 +33,7 @@ div {
 
 /**
  * Container flexbox.
- * Splits body into three parts, .other.hand.top, #innergamecontent and .own.hand
+ * Splits body into three parts, .player2.hand, #innergamecontent and .player0.hand
  */
 #gamecontent {
     width: 100%;
@@ -45,24 +45,23 @@ div {
 }
 
 /**
- * Specify size of .own.hand
+ * Specify size of .player0.hand
  */
-#gamecontent > .own.hand {
+#gamecontent > .player0.hand {
     height: 35%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap */
-    background-color: rebeccapurple;
 }
 
 /**
- * Specify size of .other.hand.top
+ * Specify size of .player2.hand
  */
-#gamecontent > .other.hand.top {
-    height: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > #innergamecontent > .other.hand */
+#gamecontent > .player2.hand {
+    height: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > #innergamecontent > .hand:not(.player0) */
     background-color: red;
 }
 
 /**
  * Container flexbox.
- * Splits middle part of body into three parts, .other.hand.left, #table and .other.hand.right
+ * Splits middle part of body into three parts, .player1.hand, #table and .player3.hand
  */
 #gamecontent > #innergamecontent {
     flex-grow: 1;
@@ -75,10 +74,10 @@ div {
 }
 
 /**
- * Specify size for .other.hand.left and .other.hand.right (but not .other.hand.top)
+ * Specify size for .player1.hand and .player3.hand (but not .player2.hand)
  */
-#gamecontent > #innergamecontent > .other.hand {
-    width: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > .other.hand */
+#gamecontent > #innergamecontent > .hand:not(.player0) {
+    width: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > .hand:not(.player0) */
     background-color: blue;
 }
 
@@ -163,9 +162,7 @@ div {
     border-radius: 20px;
 }
 
-/**
- * 
- */
+
 .pop-up-window {
     align-self: center;
     position: fixed;
@@ -173,12 +170,61 @@ div {
     margin: auto;
     width: 80%;
     height: 80%;
+
+ * Container div for all cards on the jass mat. We use the following formulas to find the hard-coded values:
+ *     #matcardwrap.width = 40% * #jassmat.width
+ *     #matcardwrap.height = 178/127 * #matcardwrap.width
+ *     #matcardwrap.top = 100% - #matcardwrap.height
+ * Note that #jassmat.width == #jassmat.height.
+ */
+#jassmat > #matcardwrap {
+    position: absolute;
+    top: 43.93700787%;
+    bottom: 0%;
+    width: 40%;
+    left: 50%;
+    transform: translate(-50%, 0%);
+}
+
+/**
+ * The jass cards on the jass mat. Their rotation origin is the center of the jass mat, which can be determined as
+ * follows:
+ *     .card.transform-origin-y = (100% - 50% * jassmat.height / #matcardwrap.height) * #matcardwrap.height
+ * However, since animations with non-center origin look weird, we instead transform the cards down below in
+ * #jassmat .card.playerX.
+ *
+ * We need to specify left and top coordinates so the animation works.
+ */
+#jassmat .card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: 50% 50%;
+    transition: 0.3s ease left, 0.3s ease top, 0.3s ease transform, 0.3s ease transform-origin, 0.3s ease width, 0.3s ease height;
+    z-index: 2;
+}
+
+/**
+ * Rotations for each of the four players
+ */
+#jassmat .card.player0 { transform: translateY(-39.18539326%) rotate(0deg) translateY(39.18539326%); }
+#jassmat .card.player1 { transform: translateY(-39.18539326%) rotate(-90deg) translateY(39.18539326%); }
+#jassmat .card.player2 { transform: translateY(-39.18539326%) rotate(-180deg) translateY(39.18539326%); }
+#jassmat .card.player3 { transform: translateY(-39.18539326%) rotate(-270deg) translateY(39.18539326%); }
+
+/**
+ * Cards in any hand should have z-index 1
+ */
+.hand .card {
+    z-index: 1;
 }
 
 /**
  * The player hand. Flexbox containing .cardholderwrap (centered horizontally)
  */
-.own.hand {
+.player0.hand {
     position: relative;
     width: 100%;
     height: 100%;
@@ -191,7 +237,7 @@ div {
  * Container whose width is min(20% * viewport.height, 30 * viewport.width)
  * See #jassmatwrap and #jassmatborder
  */
-.own.hand > .cardholderwrap {
+.player0.hand > .cardholderwrap {
     position: absolute;
     width: 20vh;
     max-width: 30vw;
@@ -209,7 +255,7 @@ div {
  *
  * Additionally, this container is moved up by a bit (10%).
  */
-.own.hand > .cardholderwrap > .cardholder {
+.player0.hand > .cardholderwrap > .cardholder {
     position: absolute;
     bottom: 10%;
     width: 100%;
@@ -220,25 +266,26 @@ div {
  * The cards should take the same width as .cardholder, rotate around a point 15% below their bottom center, and not
  * receive the ugly grey frame when tapped on iOS.
  */
-.own .card {
+.player0.hand .card {
     position: absolute;
     transform-origin: 50% 115%;
     width: 100%;
     height: 100%;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    transition: transform 0.1s;
 }
 
 /**
  * If the user hovers over a card, move the underlying image up by 5%.
  */
-.own .card:not(.unselectable):hover > .cardimg {
+.player0.hand .card:not(.unselectable):hover > .cardimg {
     transform: translate(0%, -5%);
 }
 
 /**
  * Darken out cards that can't be selected
  */
-.own .card.unselectable {
+.player0.hand .card.unselectable {
     filter: brightness(0.65);
 }
 
