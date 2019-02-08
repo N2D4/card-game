@@ -74,6 +74,28 @@ function createCard(type: [number, number]): JQuery<HTMLElement> {
     return card;
 }
 
+function createWindow(question: string, options: string[]) {
+    const window = $('.pop-up-window');
+    window.empty();
+
+    const text = $('<div></div>');
+    text.addClass('question');
+    window.append(text);
+
+    options.forEach(option => {
+        const b = createButton(option);
+        window.append(b);
+    });
+    
+}
+
+function createButton(name: string): JQuery<HTMLElement> {
+    const button = $('<div></div>');
+    button.addClass('button');
+    button.addClass(name);
+    return button;
+}
+
 function addCardHandler(card: (JQuery<HTMLElement> | [number, number]), handler: (() => void)) {
     if (Array.isArray(card)) {
         card = $('.unselectable.card.' + fromTypeToClassCard(card).join('.'));
