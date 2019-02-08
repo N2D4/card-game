@@ -162,7 +162,15 @@ div {
     border-radius: 20px;
 }
 
-/**
+
+.pop-up-window {
+    align-self: center;
+    position: fixed;
+    background: greenyellow;
+    margin: auto;
+    width: 80%;
+    height: 80%;
+
  * Container div for all cards on the jass mat. We use the following formulas to find the hard-coded values:
  *     #matcardwrap.width = 40% * #jassmat.width
  *     #matcardwrap.height = 178/127 * #matcardwrap.width
@@ -294,6 +302,9 @@ div {
     box-shadow: 0px 0px 2px 0px grey;
 }
 
+/**
+ *
+ */
 
 
 
