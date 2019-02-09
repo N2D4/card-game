@@ -56,7 +56,6 @@ div {
  */
 #gamecontent > .player2.hand {
     height: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > #innergamecontent > .hand:not(.player0) */
-    background-color: red;
 }
 
 /**
@@ -65,7 +64,6 @@ div {
  */
 #gamecontent > #innergamecontent {
     flex-grow: 1;
-    background-color: green;
 
     display: flex;
     flex-direction: row;
@@ -78,7 +76,6 @@ div {
  */
 #gamecontent > #innergamecontent > .hand:not(.player0) {
     width: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > .hand:not(.player0) */
-    background-color: blue;
 }
 
 /**
@@ -106,8 +103,6 @@ div {
     max-width: 55vh;    /* 100vh - ownhand.height - otherhandtop.width */
     width: 100%;
     
-    background-color: yellow;
-
     display: flex;
     align-items: center;
 }
@@ -213,6 +208,25 @@ div {
     cursor: pointer;
 }
 
+/**
+ * A fullscreen container div containing the popup container.
+ */
+.pop-up-window-container {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.5);   
+    transition: 0.2s background-color;   
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/**
+ * A popup window. Flexbox container containing the window's content
+ */
 .pop-up-window {
     width: 85%;
     max-width: 600px;
@@ -221,18 +235,6 @@ div {
 
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.pop-up-window-container {
-    position: absolute;
-    background-color: rgba(0, 0, 0, 0.5);      
-    left: 0;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    display: flex;
     justify-content: center;
     align-items: center;
 }
@@ -264,7 +266,7 @@ div {
     border-radius: 5px;
 
     padding: 4px;
-    font-size: 3px;
+    font-size: 2px;
     overflow: hidden;
 }
 
@@ -276,7 +278,7 @@ div {
 }
 
 /**
- *
+ * Score table
  */
 #score th, td {
     padding: 20px;            
@@ -505,9 +507,21 @@ div {
 
 
 /**
- * The trumpf indicator should be at the bottom right. Additionally, you should be able to click through it.
+ * The buttons to select the trump.
  */
- #trumpf {
+ .trumpf-choose {
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 10vmin;
+    height: 10vmin;
+    max-width: 50px;
+    max-height: 50px;
+}
+
+/**
+ * The trumpf indicator should be at the bottom right. Additionally, you should bea ble to click through it.
+ */
+#trumpf {
     position: absolute;
     right: 24px;
     bottom: 24px;
@@ -521,10 +535,26 @@ div {
 }
 
 /**
- * Trumpf indicator
+ * Trumpf selection screen icons
  */
+.trumpf-choose.schieb  { background-image: url(assets/sprites/jass/schieb.png); }
+.trumpf-choose.roesle { background-image: url(assets/sprites/jass/roesle.png); }
+.trumpf-choose.schilte { background-image: url(assets/sprites/jass/schilte.png); }
+.trumpf-choose.eichel { background-image: url(assets/sprites/jass/eichel.png); }
+.trumpf-choose.schelle { background-image: url(assets/sprites/jass/schelle.png); }
+.trumpf-choose.obe { background-image: url(assets/sprites/jass/obe_abe.png); }
+.trumpf-choose.une { background-image: url(assets/sprites/jass/une_ufe.png); }
+
+/**
+ * Trumpf indicator symbols
+ */
+#trumpf.schieb                      { background-image: url(assets/sprites/jass/schieb.png); }
 #trumpf.roesle                      { background-image: url(assets/sprites/jass/roesle.png); }
 #trumpf.schilte                     { background-image: url(assets/sprites/jass/schilte.png); }
 #trumpf.eichel                      { background-image: url(assets/sprites/jass/eichel.png); }
 #trumpf.schelle                     { background-image: url(assets/sprites/jass/schelle.png); }
+#trumpf.obe                         { background-image: url(assets/sprites/jass/obe_abe.png); }
+#trumpf.une                         { background-image: url(assets/sprites/jass/une_ufe.png); }
+ 
+
 

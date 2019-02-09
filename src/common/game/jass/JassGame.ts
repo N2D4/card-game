@@ -11,6 +11,7 @@ export interface IJassGameState {
     stich: JassStich;
     messages: ISerializable[];
     playerHandSizes: number[];
+    playerNames: string[];
 }
 
 export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJassGameState, JassGameEvent> {
@@ -36,6 +37,7 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
             stich: [][0],
             messages: [],
             playerHandSizes: [],
+            playerNames: [],
         };
     }
 
@@ -46,6 +48,7 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
             gameState.messages.push(Serializer.serialize(message));
         }
         gameState.playerHandSizes = this.players.map(p => p.hand.cards.length);
+        gameState.playerNames = this.players.map(p => p.getName());
     }
 
     // TODO: Delet this; it's only for backwards compatibility so JassGames that weren't updated yet still compile

@@ -11,8 +11,12 @@ const log = /*console.log*/ (a?: any) => {};
 
 export default class ExampleJassPlayer extends JassPlayer {
 
-    public constructor(public readonly name: string) {
+    public constructor(private readonly name: string) {
         super();
+    }
+
+    public getName() {
+        return this.name;
     }
 
     public async chooseCard(choices: JassCard[]): Promise<JassCard> {

@@ -1,5 +1,6 @@
 import ISerializable from 'src/common/serialize/ISerializable';
 import {JassCard, JassColor, JassType} from './JassCard';
+import JassStich from './JassStich';
 
 export default abstract class JassStichOrder {
 
@@ -91,6 +92,11 @@ export default abstract class JassStichOrder {
         public serialize(): ISerializable {
             return ["COLOR", this.color];
         }
+
+        public isUntertrumpf(stich: JassStich, card: JassCard) {
+            const bestInStich = stich.cards.map(a => a.card).reduce((a: JassCard | undefined, n) => a === undefined ? n : this.max(a, n), undefined);
+            return card.color === this.color && (bestInStich !== undefined && this.compare(card, bestInStich) <= 0);
+        }
     };
 
 
@@ -137,6 +143,10 @@ export default abstract class JassStichOrder {
         return false;
     }
 
+    public isUntertrumpf(stich: JassStich, card: JassCard) {
+        return false;
+    }
+
     public getScore(card: JassCard): number {
         switch (card.type) {
             case JassType.BANNER: return 10;
@@ -150,6 +160,10 @@ export default abstract class JassStichOrder {
 
     public compare(a: JassCard, b: JassCard): number {
         return a.type - b.type;
+    }
+
+    public max(a: JassCard, b: JassCard): JassCard {
+        return this.compare(a, b) >= 0 ? a : b;
     }
 
     public colorEffective(color: JassColor, firstColor: JassColor): boolean {

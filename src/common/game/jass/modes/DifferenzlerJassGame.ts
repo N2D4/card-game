@@ -48,7 +48,7 @@ export default class DifferenzlerJassGame extends JassGame {
                 const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
 
                 // Find playable cards
-                const playable = player.hand.getPlayable(stich);
+                const playable = player.hand.getPlayable(stich, true);
 
                 // Ask the player which card to play
                 const played: JassCard = await player.chooseCard(playable);

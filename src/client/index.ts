@@ -1,27 +1,37 @@
 import 'common/tweaks.ts';
+import { deepEquals, range, sanitize } from 'common/utils.ts';
 import $ from 'jquery';
 import socketio from 'socket.io-client';
+
+const _JASS_IS_DEBUG = false;
+
+
 
 (window as unknown as {jQuery: any}).jQuery = $;
 
 // Add touch start event listener for iOS; this allows :hover CSS selector to do its job
 document.addEventListener("touchstart", () => {}, true);
 
+// read slider input and display value
 $('#slider').on('input', () => {
     $('#slider-value').text($('#slider').val() as string);
 });
 
+// close score window
 $('#score').click((e) => {
     $('#score').hide();
 });
 
+// show score window
 $('.toggle-scoreboard').click((e) => {
     $('#score').show();
 });
 
+// close all windows
 $('.pop-up-window-container').hide();
 
 const socket: SocketIOClient.Socket = socketio();
+const handledQuestions: Set<string> = new Set();
 
 socket.on('gameinfo', (data: any) => {
     const str = JSON.stringify(data, undefined, 4);
@@ -35,19 +45,27 @@ socket.on('gameinfo', (data: any) => {
      * Translates an id sent by the server (from 0-3, where the own player could be any of the four) into an id used
      * in the CSS (where 0 is bottom, 1 is left, 2 is top, 3 is right, and 0 is always the player himself)
      */
-    function tplayer(pindex: number) {
+    function tplayer(pindex: number): number {
         const pcount = data.gameState.playerHandSizes.length;
         return ((pindex - data.ownid) % pcount + pcount) % pcount;
     }
 
-    // Initialize cards on the jass mat
-    // Maybe we should not replace cards that are already there, or is it better if animations are cancelled when the
-    // next packet is received?
+    /**
+     * Rotates an array received by the server so that its indices use CSS player ids, no longer server player ids.
+     */
+    function rplayerarr<T>(arr: T[]): T[] {
+        const res: T[] = [];
+        for (let i = 0; i < data.gameState.playerHandSizes.length; i++) {
+            res.push(arr[tplayer(i)]);
+        }
+        return res;
+    }
+
     if (data.gameState !== undefined) {
 
         // update scoreboard
-        const scores = [0, 0, 0, 0];
-        const guesses = [0, 0, 0, 0];
+        const scores = [...range(data.gameState.playerHandSizes.length)].map(a => 0);
+        const guesses = [...range(data.gameState.playerHandSizes.length)].map(a => 0);
         for (const m of data.gameState.messages) {
             if (m[0] === "scoreplus") {
                 scores[tplayer(m[1][1])] += m[1][0];
@@ -60,11 +78,15 @@ socket.on('gameinfo', (data: any) => {
             }
         }
         
-        updateScore(scores, guesses);
+        updateScore(scores, guesses, data.gameState.playerNames);
 
         // set trumpf icon (bottom right corner)
         for (const m of data.gameState.messages) {
             if (m[0] === "trumpf") {
+                if (m[1] === "OBENABE") $('#trumpf').addClass("obe");
+                if (m[1] === "UNNEUFFE") $('#trumpf').addClass("une");
+                if (m[1] === "schieb") $('#trumpf').addClass("schieb");
+
                 const color = m[1][1];
                 const trumpf = $('#trumpf');
                 const c = fromTypeToClassCard([color, 0])[0];
@@ -72,6 +94,9 @@ socket.on('gameinfo', (data: any) => {
             }
         }
 
+        // Initialize cards on the jass mat
+        // Maybe we should not replace cards that are already there, or is it better if animations are cancelled when the
+        // next packet is received?
         if (data.gameState.stich !== undefined) {
             const jassmatHolder = $("#matcardwrap");
             let tagged = jassmatHolder.children('.card').toArray().map(a => $(a));
@@ -196,8 +221,11 @@ socket.on('gameinfo', (data: any) => {
         const qtype = openQuestion[1][0];
         const qargs = openQuestion[1][1];
 
+        if (handledQuestions.has(qid)) continue;
+
         switch (qtype) {
             case 'guessScore':
+                handledQuestions.add(qid);
                 $('#diff').show();
                 $('#diff-button').off('click');
                 $('#diff-button').click(() => {
@@ -213,14 +241,57 @@ socket.on('gameinfo', (data: any) => {
                     });
                 }
                 break;
+            case 'chooseTrumpf':
+                handledQuestions.add(qid);
+                $("#trumpf-container").show();
+                $('#trumpf-window').empty();
+                $('#trumpf-window').append("choose Trumpf! <br>");
+
+                for (let i = 0; i < qargs.length; i++) {
+                    makeTrumpfButton(qargs[i]).click(() => {
+                        $("#trumpf-container").hide();
+                        socket.emit('answer', [qid, i]);
+                    });
+                }
+                break;
+            case 'youWannaWyys':
+                handledQuestions.add(qid);
+                socket.emit('answer', [qid, true]);
+                break;
             default:
-                alert("Unknown question type: " + qtype + ". Please contact the developer");
+                alert("Unknown question type: " + qtype + ". Please contact the developer\n\nSee the console for more info");
                 // tslint:disable-next-line:no-console
-                console.log(openQuestion);
+                console.warn("Unknown question type", openQuestion);
         }
     }
+
+
+    // Display additional info if available
+    if (_JASS_IS_DEBUG && data.additionalInfo) {
+        alert("Received additional info by the server.\n\n" + JSON.stringify(data.additionalInfo, undefined, 4));
+    }
+
 });
 
+
+function makeTrumpfButton(name: any) {
+    const serverStichOrderToCSS: Array<[any, string]> = [
+        ["OBENABE", "obe"],
+        ["UNNEUFFE", "une"],
+        [["COLOR", 0], "schelle"],
+        [["COLOR", 1], "roesle"],
+        [["COLOR", 2], "schilte"],
+        [["COLOR", 3], "eichel"],
+        ["schieb", "schieb"],
+    ];
+
+    const cssOrder = (serverStichOrderToCSS.find(a => deepEquals(a[0], name)) || ["", name])[1];
+
+    const window = $("#trumpf-window");
+    const res = $('<div class="trumpf-choose ' + cssOrder + '"></div>');
+    window.append(res);
+    return res;
+}
 
 /**
  * Translates a pair of numbers as received by the server into strings
@@ -252,19 +323,12 @@ function createCard(type?: [number, number]): JQuery<HTMLElement> {
     return card;
 }
 
-function updateScore(sc: number[], gs: number[]) {
-    const window = $('#score-window');
-    window.empty();
-    window.append("<table>");
-    window.append('<tr><th>p1: </th> <th> guessed:' + gs[0]  + "</th><th>    score: " + sc[0] + '</th></tr>');
-    window.append('<tr><th>p2: </th> <th> guessed:' + gs[1]  + "</th><th>    score: " + sc[1] + '</th></tr>');
-
-    if (sc.length > 2) {
-        window.append('<tr><th>p3: </th> <th> guessed:' + gs[2]  + "</th><th>    score: " + sc[2] + '</th></tr>');
-        window.append('<tr><th>p4: </th> <th> guessed:' + gs[3]  + "</th><th>    score: " + sc[3] + '</th></tr>');
+function updateScore(sc: number[], gs: number[], playerNames: string[]) {
+    const tbody = $('#score-window > .scoretable > tbody');
+    tbody.empty();
+    for (let i = 0; i < sc.length; i++) {
+        tbody.append(sanitize`<tr><td>${playerNames[i]}</td><td>${gs[i]}</td><td>${sc[i]}</td></tr>`);
     }
-
-    window.append("</table>");
 }
 
 

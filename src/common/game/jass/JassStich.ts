@@ -25,14 +25,17 @@ export default class JassStich {
         this.cards.push({player, card});
     }
 
-    public getPlayable(hand: JassHand): JassCard[] {
+    public getPlayable(hand: JassHand, allowUntertrumpfen: boolean): JassCard[] {
         let playable: JassCard[] = [];
         const firstCol = this.firstColor();
         if (firstCol !== undefined) {
             playable = hand.cards.filter(a => this.trumpf.colorEffective(a.color, firstCol));
         }
-        if (playable.filter(a => a.color === firstCol).length <= 0) {
+        if (playable.find(a => a.color === firstCol) === undefined) {
             playable = [...hand.cards];
+        }
+        if (!allowUntertrumpfen || playable.find(a => a.color === firstCol) !== undefined) {
+            playable = playable.filter(a => a.color === firstCol || !this.trumpf.isUntertrumpf(this, a));
         }
         return playable;
     }

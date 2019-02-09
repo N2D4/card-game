@@ -2,6 +2,7 @@ import { JassCard, JassColor, JassType} from 'common/game/jass/JassCard';
 import JassGame from 'common/game/jass/JassGame';
 import JassStich from 'common/game/jass/JassStich';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
+import { random, wait } from 'common/utils';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import { JassWyys, JassWyysType } from '../JassWyys';
 
@@ -18,18 +19,18 @@ export default class SchieberJassGame extends JassGame {
         // find player with roesle 7 if starting player is undefined
         if (this.startingPlayer === undefined)
             this.startingPlayer = this.players.filter(p => p.hand.contains(JassCard.getRoesle7()))[0];
-        this.broadcastB(this.startingPlayer);
+        this.broadcast(["startingPlayer", this.startingPlayer]);
         
         // Choose Trumpf
         const order: Array<JassStichOrder | "schieb"> = [...JassStichOrder.getSchieberStichOrder()];
         order.push("schieb");
         let trumpf: (JassStichOrder | "schieb") = await this.startingPlayer.chooseStichOrder(order);
-        this.broadcastB(trumpf);
+        this.broadcast(["trumpf", trumpf]);
 
         // if first player chose schieb, player 2 selects new trumpf
         if (trumpf === "schieb") {
             trumpf = await this.players[(this.startingPlayer.index + 2) % this.players.length].chooseStichOrder(JassStichOrder.getSchieberStichOrder());
-            this.broadcastB(trumpf);
+            this.broadcast(["trumpf", trumpf]);
         }
 
         // Play the rounds
@@ -48,10 +49,10 @@ export default class SchieberJassGame extends JassGame {
         for (let i = 0; i < numberOfRounds; i++) {
             // Create and broadcast the Stich object
             const stich = new JassStich(trumpf);
-            this.broadcastB(stich);
+            this.broadcast("startstich");
 
             for (let j = 0; j < this.players.length; j++) {
-
+                this.broadcast(["stichinfo", stich]);
                 // Select player
                 const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
 
@@ -63,18 +64,18 @@ export default class SchieberJassGame extends JassGame {
                     
                     // ask him if he wants to wyys if he can
                     if (options[j].length !== 0 && JassWyys.compare(options[j][options[j].length - 1], bestWyys) >= 0) 
-                        willWyys[j] = await player.chooseToWyys(options[j]);
+                        willWyys[j] = await player.chooseToWyys((options[j]));
                     
                     if (willWyys[j]) {
                         // player decided to wyys, broadcast wyys to everyone
                         bestWyys = options[j][options[j].length - 1];
                         wyysWinner = j % 2;
-                        this.broadcastB(bestWyys);
+                        this.broadcast(["bestWyys", bestWyys]);
                     }
                 }
 
                 // Find playable cards
-                const playable = player.hand.getPlayable(stich);
+                const playable = player.hand.getPlayable(stich, false);
 
                 // Ask the player which card to play
                 const played: JassCard = await player.chooseCard(playable);
@@ -85,7 +86,10 @@ export default class SchieberJassGame extends JassGame {
 
                 // Send a broadcast signal so that game state is updated on all clients
                 // We've already broadcasted the same stich object so don't need to do that again
-                this.broadcast();
+                this.broadcast(["playcard", played]);
+
+                // Wait for animations
+                await wait(500);
             }
 
             // add scores to team with better wyys
@@ -95,7 +99,13 @@ export default class SchieberJassGame extends JassGame {
 
             // get new winner
             lastWinner = stich.getWinner();
-            lastWinner.currentScore += stich.getScore();
+            const scorePlus = stich.getScore();
+            lastWinner.currentScore += scorePlus;
+            this.broadcast(["stichwinner", lastWinner]);
+            this.broadcast(["scoreplus", [scorePlus, lastWinner]]);
+
+            // Wait for animations
+            await wait(1500);
         }
 
 
@@ -111,8 +121,8 @@ export default class SchieberJassGame extends JassGame {
 
 
         // Broadcast ranking
-        this.broadcastB(ranking);
-        this.broadcastB(trumpf.getScoreMultiplier());
+        this.broadcast(["ranking", ranking]);
+        this.broadcast(["multiplier", trumpf.getScoreMultiplier()]);
 
 
         // Next player

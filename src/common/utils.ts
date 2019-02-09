@@ -13,6 +13,23 @@ export function random<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
+export function deepEquals(a: any, b: any) {
+    if (typeof a !== typeof b) return false;
+    if (typeof a !== 'object') return a === b;
+
+    if (typeof a.equals === 'function') return a.equals(b);
+    if (typeof b.equals === 'function') return b.equals(a);
+
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+
+    for (const key of [...aKeys, ...bKeys]) {
+        if (!deepEquals(a[key], b[key])) return false;
+    }
+
+    return true;
+}
+
 // TODO Use an unpredictable random generator
 export function pseudoUUID(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -25,3 +42,23 @@ export function pseudoUUID(): string {
 export async function wait(ms: number): Promise<void> {
     await new Promise<void>(resolve => setTimeout(resolve, ms));
 }
+
+export function htmlEscape(s: string) {
+    s = "" + s;
+    const map: Map<string, string> = new Map([
+        ['&', '&amp;'],
+        ['<', '&lt;'],
+        ['>', '&gt;'],
+        ['"', '&quot;'],
+        ["'", '&#039;'],
+    ]);
+
+    return s.replace(/[&<>"']/g, m => map.get(m) as string);
+}
+
+export function sanitize(strings: TemplateStringsArray, ...values: any[]): DocumentFragment {
+    const templ = document.createElement('template');
+    templ.innerHTML = strings.length === 1 ? strings[0] : strings.reduce((a, n, i) => `${a}${htmlEscape("" + values[i - 1])}${n}`);
+    return templ.content;
+}
+

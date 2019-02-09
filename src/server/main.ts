@@ -3,7 +3,8 @@ import 'common/tweaks';
 import express from 'express';
 import pkg from 'package.json';
 import socketio from 'socket.io';
-import DifferenzlerJassGame from 'src/common/game/jass/modes/DifferenzlerJassGame';
+import JassGame from 'src/common/game/jass/JassGame';
+import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
 import { pseudoUUID } from 'src/common/utils';
@@ -32,7 +33,7 @@ const server = app.listen(port, () => {
 const io: socketio.Server = socketio(server);
 
 const socketQueue: socketio.Socket[] = [];
-const playerCount = 2;
+const playerCount = 1;
 
 io.on('connection', (socket) => {
     socketQueue.push(socket);
@@ -42,7 +43,7 @@ io.on('connection', (socket) => {
             arr.push(new ExampleJassPlayer(pseudoUUID()));
         }
 
-        const game: DifferenzlerJassGame = new DifferenzlerJassGame(arr[0], arr[1], arr[2], arr[3]);
+        const game: JassGame = new SchieberJassGame(arr[0], arr[1], arr[2], arr[3]);
         game.play();
     }
 });

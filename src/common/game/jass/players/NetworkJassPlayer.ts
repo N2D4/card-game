@@ -20,6 +20,10 @@ export default class NetworkJassPlayer extends JassPlayer {
         this.setSocket(playerSocket);
     }
 
+    public getName(): string {
+        return "Player #" + this.index;
+    }
+
     public setSocket(playerSocket: Socket) {
         if (this.playerSocket !== undefined) playerSocket.disconnect();
         this.playerSocket = playerSocket;
@@ -27,7 +31,7 @@ export default class NetworkJassPlayer extends JassPlayer {
         this.playerSocket.on('answer', (data) => {
             const qid: number = data[0];
             if (!(qid in this.openQuestions)) {
-                this.sendPacket("Invalid question ID");
+                this.sendPacket("Invalid question ID: " + qid);
                 return;
             }
 
@@ -65,7 +69,7 @@ export default class NetworkJassPlayer extends JassPlayer {
         this.sendPacketNow();
     }
 
-    private async ask<T>(question: string, args: ISerializable, convertFunc: ((a: any) => T) = (a => a), acceptFunc: ((t: T) => boolean) = (a => true), additionalMessage?: string): Promise<T> {
+    private async ask<T>(question: string, args: ISerializable, convertFunc: ((a: any) => T) = (a => a), acceptFunc: ((t: T) => boolean) = (a => true), additionalMessage?: ISerializable): Promise<T> {
         return new Promise<any>((resolve, reject) => {
             const uid = pseudoUUID();
             this.questionResolvers[uid] = (a) => {
@@ -78,7 +82,7 @@ export default class NetworkJassPlayer extends JassPlayer {
                     accepted = false;
                 }
                 if (!accepted) {
-                    this.ask(question, args, convertFunc, acceptFunc, "Response not accepted").then(resolve);
+                    this.ask(question, args, convertFunc, acceptFunc, ["Response not accepted to question " + uid, { response: a }]).then(resolve);
                 } else {
                     resolve(t);
                 }
