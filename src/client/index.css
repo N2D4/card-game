@@ -231,7 +231,7 @@ div {
     width: 85%;
     max-width: 600px;
     background-color: pink;
-    padding: 5%;
+    padding: 2%;
 
     display: flex;
     flex-direction: column;
@@ -278,11 +278,49 @@ div {
 }
 
 /**
- * Score table
+ * The scoreboard window should have a green background and brown border
  */
-#score th, td {
-    padding: 20px;            
+#score-window {
+    background-color: green;
+    border: 2.5vmin solid #884422;
+    border-radius: 25px;
 }
+
+/**
+ * Collapse the score table's borders
+ */
+.scoretable {
+    border-collapse: collapse;
+}
+
+/**
+ * Score table cells should have some padding
+ */
+.scoretable > * > * > th, .scoretable > * > * > td {
+    padding: 20px;
+}
+
+/**
+ * Border between every two columns of the scoreboard (but not on the sides)
+ */
+.scoretable > * > * > th:not(:first-child), .scoretable > * > * > td:not(:first-child) {
+    border-left: 2px solid white;
+}
+
+/**
+ * Border between the head and the body of the scoreboard
+ */
+.scoretable > thead {
+    border-bottom: 2px solid white;
+}
+
+/**
+ * Align the numbers on the scoreboard
+ */
+.scoretable > * > * > td:not(:first-child) {
+    text-align: center;
+}
+
 
 /**
  * Border thickness can't be a percentage, so we replicate the behaviour by just creating a slightly smaller and
