@@ -4,6 +4,7 @@ import express from 'express';
 import pkg from 'package.json';
 import socketio from 'socket.io';
 import JassGame from 'src/common/game/jass/JassGame';
+import DifferenzlerJassGame from 'src/common/game/jass/modes/DifferenzlerJassGame';
 import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
@@ -43,7 +44,7 @@ io.on('connection', (socket) => {
             arr.push(new ExampleJassPlayer(pseudoUUID()));
         }
 
-        const game: JassGame = new SchieberJassGame(arr[0], arr[1], arr[2], arr[3]);
+        const game: JassGame = new DifferenzlerJassGame(arr[0], arr[1], arr[2], arr[3]);
         game.play();
     }
 });

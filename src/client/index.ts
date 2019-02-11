@@ -17,12 +17,12 @@ $('#slider').on('input', () => {
     $('#slider-value').text($('#slider').val() as string);
 });
 
-// close score window
+// close score window on mouseclick
 $('#score').click((e) => {
     $('#score').hide();
 });
 
-// show score window
+// show score window button
 $('.toggle-scoreboard').click((e) => {
     $('#score').show();
 });
@@ -212,6 +212,9 @@ socket.on('gameinfo', (data: any) => {
     }
 
 
+    // Close the pop-up windows of questions asked in previous packets
+    $('#diff').hide();
+    $('#trumpf-container').hide();
 
 
     // Answer questions asked by the server
@@ -225,38 +228,34 @@ socket.on('gameinfo', (data: any) => {
 
         switch (qtype) {
             case 'guessScore':
-                handledQuestions.add(qid);
                 $('#diff').show();
                 $('#diff-button').off('click');
                 $('#diff-button').click(() => {
                     const v = $('#slider').val() as string;
-                    socket.emit('answer', [qid, v]);
+                    answerQuestion(qid, v);
                     $('#diff').hide();
                 });
                 break;
             case 'chooseCard':
                 for (let i = 0; i < qargs.length; i++) {
                     addCardHandler(qargs[i], () => {
-                        socket.emit('answer', [qid, i]);
+                        answerQuestion(qid, i);
                     });
                 }
                 break;
             case 'chooseTrumpf':
-                handledQuestions.add(qid);
                 $("#trumpf-container").show();
-                $('#trumpf-window').empty();
-                $('#trumpf-window').append("choose Trumpf! <br>");
+                $('#trumpf-window-buttons').empty();
 
                 for (let i = 0; i < qargs.length; i++) {
                     makeTrumpfButton(qargs[i]).click(() => {
                         $("#trumpf-container").hide();
-                        socket.emit('answer', [qid, i]);
+                        answerQuestion(qid, i);
                     });
                 }
                 break;
             case 'youWannaWyys':
-                handledQuestions.add(qid);
-                socket.emit('answer', [qid, true]);
+                answerQuestion(qid, true);
                 break;
             default:
                 alert("Unknown question type: " + qtype + ". Please contact the developer\n\nSee the console for more info");
@@ -274,6 +273,11 @@ socket.on('gameinfo', (data: any) => {
 });
 
 
+function answerQuestion(qid: string, answer: any) {
+    socket.emit('answer', [qid, answer]);
+    handledQuestions.add(qid);
+}
+
 function makeTrumpfButton(name: any) {
     const serverStichOrderToCSS: Array<[any, string]> = [
         ["OBENABE", "obe"],
@@ -287,7 +291,7 @@ function makeTrumpfButton(name: any) {
 
     const cssOrder = (serverStichOrderToCSS.find(a => deepEquals(a[0], name)) || ["", name])[1];
 
-    const window = $("#trumpf-window");
+    const window = $("#trumpf-window-buttons");
     const res = $('<div class="trumpf-choose ' + cssOrder + '"></div>');
     window.append(res);
     return res;
