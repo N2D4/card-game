@@ -121,30 +121,33 @@ socket.on('gameinfo', (data: any) => {
                 jassmatHolder.append(card);
 
 
-                // Set starting point of animation
-                card.css('transition', '0s color');
                 if (existing.length >= 1) {
-                    card.css('width', existing.css('width'));
-                    card.css('height', existing.css('height'));
-                    card.css('transform', existing.css('transform'));
-                    card.css('transform-origin', '50% 0%');
-                    card.offset(existing.offset() as {top: number, left: number});
-                    existing.remove();
+                    animateFromTo(card, existing);
                 }
-
-                // Make sure our transition changes went through
-                forceReflow(card);
-
-                // Do the animation
-                card.css('transition', '');
-                card.css('width', '');
-                card.css('height', '');
-                card.css('left', '');
-                card.css('top', '');
-                card.css('transform', '');
-                card.css('transform-origin', '');
             }
-            tagged.forEach(p => $(p).remove());
+
+            tagged.forEach(p => {
+                for (let i = 0; i < data.gameState.messages.length; i++) {
+                    const message = data.gameState.messages[i];
+                    if (message[0] === "playcard") {
+                        if (fromTypeToClassCard(message[1]).every(a => p.hasClass(a))) {
+                            const gestochen = createCard(message[1]);
+                            console.warn(message, gestochen, false);
+                            for (let j = i; j < data.gameState.messages.length; j++) {
+                                const nmessage = data.gameState.messages[j];
+                                if (nmessage[0] === "stichwinner") {
+                                    const playerName = 'player' + tplayer(nmessage[1]);
+                                    $('.' + playerName + ' .gestochenholder').append(gestochen);
+                                    animateFromTo(gestochen, p, false);
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                $(p).remove();
+            });
         }
     }
 
@@ -271,6 +274,44 @@ socket.on('gameinfo', (data: any) => {
     }
 
 });
+
+
+function animateFromTo(newEl: JQuery<HTMLElement>, from: JQuery<HTMLElement>, transform: boolean = true) {
+    forceReflow(newEl);
+    console.warn(from.css('transform'));
+    console.warn(from.offset());
+    console.warn(newEl.css('transform'));
+    console.warn(newEl.offset());
+
+    newEl.css('transition', '0s color');
+
+    // Set starting point of animation
+    newEl.css('width', from.css('width'));
+    newEl.css('height', from.css('height'));
+    if (transform) {
+        newEl.css('transform', from.css('transform'));
+        newEl.css('transform-origin', from.css('transform-origin'));
+    }
+    newEl.offset(from.offset() as {top: number, left: number});
+    from.remove();
+
+    // Make sure our transition changes went through
+    forceReflow(newEl);
+
+    console.warn(newEl.css('transform'));
+    console.warn(newEl.offset());
+    /*
+    // Do the animation
+    newEl.css('transition', '');
+    newEl.css('width', '');
+    newEl.css('height', '');
+    newEl.css('left', '');
+    newEl.css('top', '');
+    if (transform) {
+        newEl.css('transform', '');
+        newEl.css('transform-origin', '');
+    }*/
+}
 
 
 function answerQuestion(qid: string, answer: any) {
