@@ -45,33 +45,6 @@ div {
 }
 
 /**
- * Specify size of .player0.hand
- */
-#gamecontent > .player0.hand {
-    height: 35%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap */
-} 
-
-/**
- * Specify size of .player2.hand
- */
-#gamecontent > .player2.hand {
-    height: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > #innergamecontent > .hand:not(.player0) */
-}
-
-/**
- * Container flexbox.
- * Splits middle part of body into three parts, .player1.hand, #table and .player3.hand
- */
-#gamecontent > #innergamecontent {
-    flex-grow: 1;
-
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: stretch;
-}
-
-/**
  * Specify size for .player1.hand and .player3.hand (but not .player2.hand)
  */
 #gamecontent > #innergamecontent > .hand:not(.player0) {
@@ -144,9 +117,148 @@ div {
 
 
 /**
+ * Border thickness can't be a percentage, so we replicate the behaviour by just creating a slightly smaller and
+ * differently colored #jassmat element inside of #jassmatborder.
+ */
+#jassmat {
+    position: absolute;
+    top: 2.5%;
+    left: 2.5%;
+    bottom: 2.5%;
+    right: 2.5%;
+
+    background-color: green;
+    border-radius: 20px;
+}
+
+#cardfield .card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 20vh;
+    max-width: 30vw;
+    height: 28.031496063vh;
+    max-height: 42.0472440945vw;
+    transform: translate(20vw, 20vh) rotate(20deg) translateY(10vh);
+    transform-origin: 0% 0%;
+    transition: 0.3s ease transform, 0.3s ease transform-origin;
+    z-index: 2;
+}
+
+/**
+ * Background of each card is the spritesheet. Border radius 3.5%, and a tiny shadow
+ */
+.card > .cardimg {
+    background-color: white;
+    background-image: url(assets/sprites/jass/cardset.png);
+    background-size: 1000% 400%;
+    background-position: -900% 0%;
+    width: 100%;
+    height: 100%;
+    border-radius: 3.5%;
+    box-shadow: 0px 0px 2px 0px grey;
+}
+
+
+/**
+ * Cards
+ */
+.card.schelle.sechs > .cardimg      { background-position:    0%    0%; }
+.card.schelle.sieben > .cardimg     { background-position: -100%    0%; }
+.card.schelle.acht > .cardimg       { background-position: -200%    0%; }
+.card.schelle.neun > .cardimg       { background-position: -300%    0%; }
+.card.schelle.zehn > .cardimg       { background-position: -400%    0%; }
+.card.schelle.under > .cardimg      { background-position: -500%    0%; }
+.card.schelle.ober > .cardimg       { background-position: -600%    0%; }
+.card.schelle.koenig > .cardimg     { background-position: -700%    0%; }
+.card.schelle.ass > .cardimg        { background-position: -800%    0%; }
+
+.card.eichel.sechs > .cardimg       { background-position:    0% -100%; }
+.card.eichel.sieben > .cardimg      { background-position: -100% -100%; }
+.card.eichel.acht > .cardimg        { background-position: -200% -100%; }
+.card.eichel.neun > .cardimg        { background-position: -300% -100%; }
+.card.eichel.zehn > .cardimg        { background-position: -400% -100%; }
+.card.eichel.under > .cardimg       { background-position: -500% -100%; }
+.card.eichel.ober > .cardimg        { background-position: -600% -100%; }
+.card.eichel.koenig > .cardimg      { background-position: -700% -100%; }
+.card.eichel.ass > .cardimg         { background-position: -800% -100%; }
+
+.card.roesle.sechs > .cardimg       { background-position:    0% -200%; }
+.card.roesle.sieben > .cardimg      { background-position: -100% -200%; }
+.card.roesle.acht > .cardimg        { background-position: -200% -200%; }
+.card.roesle.neun > .cardimg        { background-position: -300% -200%; }
+.card.roesle.zehn > .cardimg        { background-position: -400% -200%; }
+.card.roesle.under > .cardimg       { background-position: -500% -200%; }
+.card.roesle.ober > .cardimg        { background-position: -600% -200%; }
+.card.roesle.koenig > .cardimg      { background-position: -700% -200%; }
+.card.roesle.ass > .cardimg         { background-position: -800% -200%; }
+
+.card.schilte.sechs > .cardimg      { background-position:    0% -300%; }
+.card.schilte.sieben > .cardimg     { background-position: -100% -300%; }
+.card.schilte.acht > .cardimg       { background-position: -200% -300%; }
+.card.schilte.neun > .cardimg       { background-position: -300% -300%; }
+.card.schilte.zehn > .cardimg       { background-position: -400% -300%; }
+.card.schilte.under > .cardimg      { background-position: -500% -300%; }
+.card.schilte.ober > .cardimg       { background-position: -600% -300%; }
+.card.schilte.koenig > .cardimg     { background-position: -700% -300%; }
+.card.schilte.ass > .cardimg        { background-position: -800% -300%; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * The buttons to select the trump.
+ */
+ .trumpf-choose {
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 10vmin;
+    height: 10vmin;
+    max-width: 50px;
+    max-height: 50px;
+}
+
+/**
+ * The trumpf indicator should be at the bottom right. Additionally, you should bea ble to click through it.
+ */
+#trumpf {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 10vmin;
+    height: 10vmin;
+    max-width: 150px;
+    max-height: 150px;
+    pointer-events: none;
+}
+
+/**
+ * Trumpf selection screen icons
+ */
+.trumpf-choose.schieb  { background-image: url(assets/sprites/jass/schieb.png); }
+.trumpf-choose.roesle { background-image: url(assets/sprites/jass/roesle.png); }
+.trumpf-choose.schilte { background-image: url(assets/sprites/jass/schilte.png); }
+.trumpf-choose.eichel { background-image: url(assets/sprites/jass/eichel.png); }
+.trumpf-choose.schelle { background-image: url(assets/sprites/jass/schelle.png); }
+.trumpf-choose.obe { background-image: url(assets/sprites/jass/obe_abe.png); }
+.trumpf-choose.une { background-image: url(assets/sprites/jass/une_ufe.png); }
+
+
+/**
  * GUI elements should have z-index 10000
  */
-#gui * {
+ #gui * {
     z-index: 10000;
 }
 
@@ -322,288 +434,6 @@ div {
 }
 
 
-/**
- * Border thickness can't be a percentage, so we replicate the behaviour by just creating a slightly smaller and
- * differently colored #jassmat element inside of #jassmatborder.
- */
-#jassmat {
-    position: absolute;
-    top: 2.5%;
-    left: 2.5%;
-    bottom: 2.5%;
-    right: 2.5%;
-
-    background-color: green;
-    border-radius: 20px;
-}
-
-/**
- * Container div for all cards on the jass mat. We use the following formulas to find the hard-coded values:
- *
- *     #matcardwrap.width = 40% * #jassmat.width
- *     #matcardwrap.height = 178/127 * #matcardwrap.width
- *     #matcardwrap.top = 100% - #matcardwrap.height
- *
- * Note that #jassmat.width == #jassmat.height.
- */
-#jassmat > #matcardwrap {
-    position: absolute;
-    top: 43.93700787%;
-    bottom: 0%;
-    width: 40%;
-    left: 50%;
-    transform: translate(-50%, 0%);
-}
-
-/**
- * The jass cards on the jass mat. Their rotation origin is the center of the jass mat, which can be determined as
- * follows:
- *
- *     .card.transform-origin-y = (100% - 50% * jassmat.height / #matcardwrap.height) * #matcardwrap.height
- *
- * However, since animations with non-center origin look weird, we instead transform the cards down below in
- * #jassmat .card.playerX.
- *
- * We need to specify left and top coordinates so the animation works.
- */
-#jassmat .card {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    transform-origin: 50% 50%;
-    transition: 0.3s ease left, 0.3s ease top, 0.3s ease transform, 0.3s ease transform-origin, 0.3s ease width, 0.3s ease height;
-    z-index: 2;
-}
-
-/*
- * Rotations for each of the four players
- */
-#jassmat .card.player0 { transform: translateY(-39.18539326%) rotate(0deg) translateY(39.18539326%); }
-#jassmat .card.player1 { transform: translateY(-39.18539326%) rotate(-90deg) translateY(39.18539326%); }
-#jassmat .card.player2 { transform: translateY(-39.18539326%) rotate(-180deg) translateY(39.18539326%); }
-#jassmat .card.player3 { transform: translateY(-39.18539326%) rotate(-270deg) translateY(39.18539326%); }
-
-/**
- * Cards in any hand should have z-index 1
- */
-.hand .card {
-    z-index: 1;
-}
-
-/**
- * A player hand. Flexbox containing .cardholderwrap (centered horizontally and vertically)
- */
-.hand {
-    position: relative;
-    z-index: 1;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/**
- * The own player's hand should always have 100% of the size of the parent (the other hands are managed by a flexbox)
- */
-.player0.hand {
-    width: 100%;
-    height: 100%;
-}
-
-/**
- * Container whose width is min(20% * viewport.height, 30% * viewport.width)
- * See #jassmatwrap and #jassmatborder
- */
-.hand > .cardholderwrap {
-    position: absolute;
-    width: 20vh;
-    max-width: 30vw;
-}
-
-/**
- * The wraps on top and bottom should have a height of 100% the container's height. The wraps on left and right should
- * have a height of 100% the container's width 
- */
-.player0.hand > .cardholderwrap, .player2.hand > .cardholderwrap { height: 100%; }
-.player1.hand > .cardholderwrap, .player3.hand > .cardholderwrap { padding-bottom: 100%; }
-
-/**
- * Rotate the card holders depending on their position
- */
-.player0.hand > .cardholderwrap { transform: rotate(0deg); }
-.player1.hand > .cardholderwrap { transform: rotate(-90deg); }
-.player2.hand > .cardholderwrap { transform: rotate(-180deg); }
-.player3.hand > .cardholderwrap { transform: rotate(-270deg); }
-
-/**
- * Container with the size of a card, aspect ratio 127/178 (a card).
- *
- *     calculatedWidth = min(20% * viewport.height, 30% * viewport.width)
- *     calculatedHeight = 178/127 * min(20% * viewport.height, 30% * viewport.width)
- *
- * See #jassmatborder.
- */
-.hand > .cardholderwrap > .cardholder {
-    position: absolute;
-    width: 100%;
-    padding-bottom: 140.15748%;
-}
-
-.player0.hand > .cardholderwrap > .cardholder { bottom: 10%; }
-.player1.hand > .cardholderwrap > .cardholder { top: 10%; }
-.player2.hand > .cardholderwrap > .cardholder { top: 10%; }
-.player3.hand > .cardholderwrap > .cardholder { top: 10%; }
-
-/**
- * The cards should take the same width as .cardholder, rotate around a point 15% below their bottom center, and not
- * receive the ugly grey frame when tapped on iOS.
- */
-.hand .card {
-    position: absolute;
-    transform-origin: 50% 115%;
-    width: 100%;
-    height: 100%;
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-
-    transition: 100.3s ease left, 100.3s ease top, 100.3s ease transform, 100.3s ease transform-origin, 100.3s ease width, 100.3s ease height;
-}
-
-/**
- * If the user hovers over a card, move the underlying image up by 5%.
- */
-.player0.hand .cardholder > .card:not(.unselectable):hover > .cardimg {
-    transform: translate(0%, -5%);
-}
-
-/**
- * Darken out cards that can't be selected
- */
-.player0.hand .cardholder > .card.unselectable {
-    filter: brightness(0.65);
-}
-
-/**
- * Holder element for all gestochene cards. It's outside of the screen by default. Width and height are the same as
- * width and height of .hand .cardholder
- */
-.hand > .gestochenholder {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform-origin: 0% 0%;
-
-    width: 20vh;
-    max-width: 30vw;
-    height: 28.031496063vh;
-    max-height: 42.0472440945vw;
-}
-
-.player0.hand > .gestochenholder { top: 110vh; transform: rotate(0deg) translateX(-50%); }
-.player1.hand > .gestochenholder { left: 110vw; transform: translateX(50%) translateY(-50%) rotate(-90deg) translateX(-50%); }
-.player2.hand > .gestochenholder { top: -10vh; transform: rotate(-180deg) translateX(-50%); }
-.player3.hand > .gestochenholder { left: -10vw; transform: translateX(-50%) translateY(-50%) rotate(-270deg) translateX(-50%); }
-
-/**
- * Background of each card is the spritesheet. Border radius 3.5%, and a tiny shadow
- */
-.card > .cardimg {
-    background-color: white;
-    background-image: url(assets/sprites/jass/cardset.png);
-    background-size: 1000% 400%;
-    background-position: -900% 0%;
-    width: 100%;
-    height: 100%;
-    border-radius: 3.5%;
-    box-shadow: 0px 0px 2px 0px grey;
-}
-
-
-/**
- * Cards
- */
-.card.schelle.sechs > .cardimg      { background-position:    0%    0%; }
-.card.schelle.sieben > .cardimg     { background-position: -100%    0%; }
-.card.schelle.acht > .cardimg       { background-position: -200%    0%; }
-.card.schelle.neun > .cardimg       { background-position: -300%    0%; }
-.card.schelle.zehn > .cardimg       { background-position: -400%    0%; }
-.card.schelle.under > .cardimg      { background-position: -500%    0%; }
-.card.schelle.ober > .cardimg       { background-position: -600%    0%; }
-.card.schelle.koenig > .cardimg     { background-position: -700%    0%; }
-.card.schelle.ass > .cardimg        { background-position: -800%    0%; }
-
-.card.eichel.sechs > .cardimg       { background-position:    0% -100%; }
-.card.eichel.sieben > .cardimg      { background-position: -100% -100%; }
-.card.eichel.acht > .cardimg        { background-position: -200% -100%; }
-.card.eichel.neun > .cardimg        { background-position: -300% -100%; }
-.card.eichel.zehn > .cardimg        { background-position: -400% -100%; }
-.card.eichel.under > .cardimg       { background-position: -500% -100%; }
-.card.eichel.ober > .cardimg        { background-position: -600% -100%; }
-.card.eichel.koenig > .cardimg      { background-position: -700% -100%; }
-.card.eichel.ass > .cardimg         { background-position: -800% -100%; }
-
-.card.roesle.sechs > .cardimg       { background-position:    0% -200%; }
-.card.roesle.sieben > .cardimg      { background-position: -100% -200%; }
-.card.roesle.acht > .cardimg        { background-position: -200% -200%; }
-.card.roesle.neun > .cardimg        { background-position: -300% -200%; }
-.card.roesle.zehn > .cardimg        { background-position: -400% -200%; }
-.card.roesle.under > .cardimg       { background-position: -500% -200%; }
-.card.roesle.ober > .cardimg        { background-position: -600% -200%; }
-.card.roesle.koenig > .cardimg      { background-position: -700% -200%; }
-.card.roesle.ass > .cardimg         { background-position: -800% -200%; }
-
-.card.schilte.sechs > .cardimg      { background-position:    0% -300%; }
-.card.schilte.sieben > .cardimg     { background-position: -100% -300%; }
-.card.schilte.acht > .cardimg       { background-position: -200% -300%; }
-.card.schilte.neun > .cardimg       { background-position: -300% -300%; }
-.card.schilte.zehn > .cardimg       { background-position: -400% -300%; }
-.card.schilte.under > .cardimg      { background-position: -500% -300%; }
-.card.schilte.ober > .cardimg       { background-position: -600% -300%; }
-.card.schilte.koenig > .cardimg     { background-position: -700% -300%; }
-.card.schilte.ass > .cardimg        { background-position: -800% -300%; }
-
-
-
-
-/**
- * The buttons to select the trump.
- */
- .trumpf-choose {
-    background-repeat: no-repeat;
-    background-size: cover;
-    width: 10vmin;
-    height: 10vmin;
-    max-width: 50px;
-    max-height: 50px;
-}
-
-/**
- * The trumpf indicator should be at the bottom right. Additionally, you should bea ble to click through it.
- */
-#trumpf {
-    position: absolute;
-    right: 24px;
-    bottom: 24px;
-    background-repeat: no-repeat;
-    background-size: cover;
-    width: 10vmin;
-    height: 10vmin;
-    max-width: 150px;
-    max-height: 150px;
-    pointer-events: none;
-}
-
-/**
- * Trumpf selection screen icons
- */
-.trumpf-choose.schieb  { background-image: url(assets/sprites/jass/schieb.png); }
-.trumpf-choose.roesle { background-image: url(assets/sprites/jass/roesle.png); }
-.trumpf-choose.schilte { background-image: url(assets/sprites/jass/schilte.png); }
-.trumpf-choose.eichel { background-image: url(assets/sprites/jass/eichel.png); }
-.trumpf-choose.schelle { background-image: url(assets/sprites/jass/schelle.png); }
-.trumpf-choose.obe { background-image: url(assets/sprites/jass/obe_abe.png); }
-.trumpf-choose.une { background-image: url(assets/sprites/jass/une_ufe.png); }
 
 /**
  * Trumpf indicator symbols

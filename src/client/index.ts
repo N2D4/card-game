@@ -1,10 +1,15 @@
+import { Transform } from 'client/js/Transform.ts';
 import 'common/tweaks.ts';
 import { deepEquals, range, sanitize } from 'common/utils.ts';
 import $ from 'jquery';
 import socketio from 'socket.io-client';
 
-const _JASS_IS_DEBUG = false;
+const _JASS_IS_DEBUG = true;
 
+const socket: SocketIOClient.Socket = socketio();
+const handledQuestions: Set<string> = new Set();
+const cardTransforms: Array<Array<Transform | undefined>> = [...range(4)].map(() => [...range(9)].map(() => undefined));
+const cardHandlers: Array<Array<() => void>> = [...range(4)].map(() => [...range(9)].map(() => (() => 0)));
 
 
 (window as unknown as {jQuery: any}).jQuery = $;
@@ -30,16 +35,19 @@ $('.toggle-scoreboard').click((e) => {
 // close all windows
 $('.pop-up-window-container').hide();
 
-const socket: SocketIOClient.Socket = socketio();
-const handledQuestions: Set<string> = new Set();
 
 socket.on('gameinfo', (data: any) => {
-    const str = JSON.stringify(data, undefined, 4);
-    // tslint:disable-next-line:no-console
-    console.log(str);
+    if (_JASS_IS_DEBUG) {
+        const str = JSON.stringify(data, undefined, 4);
+        // tslint:disable-next-line:no-console
+        console.log(str);
+        // Display additional info if available
+        if (data.additionalInfo) {
+            alert("Received additional info by the server.\n\n" + JSON.stringify(data.additionalInfo, undefined, 4));
+        }
+    }
 
 
-    const ownCardHolder = $('.player0.hand .cardholder');
 
     /**
      * Translates an id sent by the server (from 0-3, where the own player could be any of the four) into an id used
@@ -61,6 +69,8 @@ socket.on('gameinfo', (data: any) => {
         return res;
     }
 
+
+
     if (data.gameState !== undefined) {
 
         // update scoreboard
@@ -77,8 +87,8 @@ socket.on('gameinfo', (data: any) => {
                 guesses[tplayer(3)] = m[1][3];
             }
         }
-        
         updateScore(scores, guesses, data.gameState.playerNames);
+
 
         // set trumpf icon (bottom right corner)
         for (const m of data.gameState.messages) {
@@ -94,9 +104,10 @@ socket.on('gameinfo', (data: any) => {
             }
         }
 
-        // Initialize cards on the jass mat
-        // Maybe we should not replace cards that are already there, or is it better if animations are cancelled when the
-        // next packet is received?
+
+        const jassmatTransform: Transform = '';
+        
+        /*// Initialize cards on the jass mat
         if (data.gameState.stich !== undefined) {
             const jassmatHolder = $("#matcardwrap");
             let tagged = jassmatHolder.children('.card').toArray().map(a => $(a));
@@ -148,15 +159,15 @@ socket.on('gameinfo', (data: any) => {
                 }
                 $(p).remove();
             });
-        }
+        }*/
     }
 
 
 
-    // Populate the player's own hand
+    /*// Populate the player's own hand
     const cardAngleDif = 172 / (data.hand.length + 1);
     const cardAngleStart = -86 + cardAngleDif;
-    const ownCardArray = ownCardHolder.find('.card').toArray();
+    const ownCardArray = $('.card.own').toArray();
     let oldCardIter = -1;
     let lastCard;
     for (let i = 0; i < data.hand.length; i++) {
@@ -165,6 +176,7 @@ socket.on('gameinfo', (data: any) => {
             if (fromTypeToClassCard(data.hand[i]).every(a => ownCardArray[j].classList.contains(a))) {
                 card = $(ownCardArray[j]) as JQuery<HTMLElement>;
                 card.addClass('unselectable');
+                card.css('transform', '');
                 card.off('click');
                 for (let k = oldCardIter + 1; k < j; k++) {
                     (ownCardArray[k].parentNode as Node).removeChild(ownCardArray[k]);
@@ -212,7 +224,7 @@ socket.on('gameinfo', (data: any) => {
         for (let j = 0; j < size; j++) {
             $(cards[j]).css('transform', 'rotate(' + (cardAngleStartL + j * cardAngleDifL) + 'deg)');
         }
-    }
+    }*/
 
 
     // Close the pop-up windows of questions asked in previous packets
@@ -268,50 +280,11 @@ socket.on('gameinfo', (data: any) => {
     }
 
 
-    // Display additional info if available
-    if (_JASS_IS_DEBUG && data.additionalInfo) {
-        alert("Received additional info by the server.\n\n" + JSON.stringify(data.additionalInfo, undefined, 4));
-    }
+
+
+
 
 });
-
-
-function animateFromTo(newEl: JQuery<HTMLElement>, from: JQuery<HTMLElement>, transform: boolean = true) {
-    forceReflow(newEl);
-    console.warn(from.css('transform'));
-    console.warn(from.offset());
-    console.warn(newEl.css('transform'));
-    console.warn(newEl.offset());
-
-    newEl.css('transition', '0s color');
-
-    // Set starting point of animation
-    newEl.css('width', from.css('width'));
-    newEl.css('height', from.css('height'));
-    if (transform) {
-        newEl.css('transform', from.css('transform'));
-        newEl.css('transform-origin', from.css('transform-origin'));
-    }
-    newEl.offset(from.offset() as {top: number, left: number});
-    from.remove();
-
-    // Make sure our transition changes went through
-    forceReflow(newEl);
-
-    console.warn(newEl.css('transform'));
-    console.warn(newEl.offset());
-    /*
-    // Do the animation
-    newEl.css('transition', '');
-    newEl.css('width', '');
-    newEl.css('height', '');
-    newEl.css('left', '');
-    newEl.css('top', '');
-    if (transform) {
-        newEl.css('transform', '');
-        newEl.css('transform-origin', '');
-    }*/
-}
 
 
 function answerQuestion(qid: string, answer: any) {
@@ -390,31 +363,10 @@ function addCardHandler(card: (JQuery<HTMLElement> | [number, number]), handler:
 }
 
 
-/**
- * Takes an argument in the form of the CSS matrix() transform (2D)
- */
-function changeMatrixOrigin(matrix: number[], oldOrigin: {left: number, top: number}, newOrigin: {left: number, top: number}): number[] {
-    const x0 = oldOrigin.left - newOrigin.left;
-    const y0 = oldOrigin.top - newOrigin.top;
-    const m = matrix;
-    return [m[0], m[1], m[2], m[3], x0 - m[0] * x0 - m[2] * y0, y0 - m[1] * x0 - m[3] * y0];
-}
-
-
-
 // tslint:disable-next-line:variable-name
 let _reflowForceDumpster = 0;
 /**
- * Okay, so because of how browsers work, disabling transitions then changing a property doesn't cause the positions to
- * update immediately, which means that if you re-enable transitions right after might cause weird issues (such as the
- * property still transitioning to the target state, even if transitions were disabled in the moment we changed them).
- * 
- * Fortunately, there are tricks to force a reflow (such as accessing offset_ or scroll_ variables of an element).
- * Causing a reflow after changing the property but before re-enabling transitions works as a fix to our issues.
- * 
- * This was a weird one to debug, especially because in a good number of scenarios the reflow was triggered as a side
- * effect by other factors. But, I found a reliable way to detect whether the debug tools are open and it seems to work
- * cross-browser, which is nice in case I ever wanna put a Bitcoin miner somewhere. ;)
+ * Force reflow
  */
 function forceReflow(element: JQuery<HTMLElement>) {
     // At least one (probably all) of the following should work
@@ -423,7 +375,7 @@ function forceReflow(element: JQuery<HTMLElement>) {
     _reflowForceDumpster += element.css('transform').length;
     _reflowForceDumpster %= 500000;
 
-    // Make sure this method isn't getting optimized out (not that I expect compilers to be THAT advanced but who knows)
+    // Make sure this method isn't getting optimized out
     for (let i = 0; "." + i !== ".100"; i++) {
         if (Math.random() < 0.99) return;
     }
