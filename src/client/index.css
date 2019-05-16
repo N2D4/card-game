@@ -231,7 +231,7 @@ div {
     width: 85%;
     max-width: 600px;
     background-color: pink;
-    padding: 24px;
+    padding: 2%;
 
     display: flex;
     flex-direction: column;
@@ -466,44 +466,22 @@ div {
     width: 100%;
     height: 100%;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-
-    transition: 100.3s ease left, 100.3s ease top, 100.3s ease transform, 100.3s ease transform-origin, 100.3s ease width, 100.3s ease height;
+    transition: transform 0.2s;
 }
 
 /**
  * If the user hovers over a card, move the underlying image up by 5%.
  */
-.player0.hand .cardholder > .card:not(.unselectable):hover > .cardimg {
+.player0.hand .card:not(.unselectable):hover > .cardimg {
     transform: translate(0%, -5%);
 }
 
 /**
  * Darken out cards that can't be selected
  */
-.player0.hand .cardholder > .card.unselectable {
+.player0.hand .card.unselectable {
     filter: brightness(0.65);
 }
-
-/**
- * Holder element for all gestochene cards. It's outside of the screen by default. Width and height are the same as
- * width and height of .hand .cardholder
- */
-.hand > .gestochenholder {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform-origin: 0% 0%;
-
-    width: 20vh;
-    max-width: 30vw;
-    height: 28.031496063vh;
-    max-height: 42.0472440945vw;
-}
-
-.player0.hand > .gestochenholder { top: 110vh; transform: rotate(0deg) translateX(-50%); }
-.player1.hand > .gestochenholder { left: 110vw; transform: translateX(50%) translateY(-50%) rotate(-90deg) translateX(-50%); }
-.player2.hand > .gestochenholder { top: -10vh; transform: rotate(-180deg) translateX(-50%); }
-.player3.hand > .gestochenholder { left: -10vw; transform: translateX(-50%) translateY(-50%) rotate(-270deg) translateX(-50%); }
 
 /**
  * Background of each card is the spritesheet. Border radius 3.5%, and a tiny shadow
