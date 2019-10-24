@@ -31,7 +31,7 @@ export default class JassStich {
         if (firstCol !== undefined) {
             playable = hand.cards.filter(a => this.trumpf.colorEffective(a.color, firstCol));
         }
-        if (playable.find(a => a.color === firstCol) === undefined) {
+        if (playable.find(a => a.color === firstCol && !this.trumpf.canBeHeldBack(a)) === undefined) {
             playable = [...hand.cards];
         }
         if (!allowUntertrumpfen || playable.find(a => a.color === firstCol) !== undefined) {

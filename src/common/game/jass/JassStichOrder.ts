@@ -54,7 +54,7 @@ export default abstract class JassStichOrder {
         }
 
         public canBeHeldBack(card: JassCard) {
-            return card.color === this.color || card.type === JassType.UNDER;
+            return card.color === this.color && card.type === JassType.UNDER;
         }
 
         public getScore(card: JassCard) {
