@@ -15,13 +15,12 @@ const app: express.Application = express();
 const port: number = +(process.env.PORT || 3000);
 
 
-app.get('/', (req, res) => {
-    res.redirect('/index.html');
-});
-
 const client_files: {[key: string]: string} = pkg.client_files;
 for (const [key, value] of Object.entries(client_files)) {
     app.use('/' + key, express.static(value));
+    if (key.endsWith('index.html')) {
+        app.use('/' + key.substring(0, key.length - 'index.html'.length), express.static(value));
+    }
 }
 
 const server = app.listen(port, () => {
