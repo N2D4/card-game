@@ -30,7 +30,7 @@ export function deepEquals(a: any, b: any) {
     return true;
 }
 
-// TODO Use an unpredictable random generator
+// TODO Use an unpredictable RNG
 export function pseudoUUID(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
       const r: number = Math.random() * 16 | 0;

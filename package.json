@@ -44,8 +44,8 @@
     "@types/socket.io": "^2.1.0",
     "@types/socket.io-client": "^1.4.32",
     "babel-loader": "^8.0.4",
-    "babel-plugin-module-resolver": "^3.1.1",
-    "tslint": "^5.11.0",
+    "babel-plugin-module-resolver": "^4.0.0",
+    "tslint": "^6.0.0",
     "typescript": "^3.1.6",
     "webpack": "^4.26.1",
     "webpack-cli": "^3.1.2"

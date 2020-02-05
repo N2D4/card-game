@@ -3,19 +3,24 @@ import JassStichOrder from "common/game/jass/JassStichOrder";
 import { JassWyys } from "common/game/jass/JassWyys";
 import Serializer from "common/serialize/Serializer";
 import { pseudoUUID, wait } from "common/utils";
-import { Socket } from "socket.io";
 import ISerializable from "src/common/serialize/ISerializable";
 import JassPlayer from "./JassPlayer";
+
+interface PlayerSocket {
+    disconnect(): void;
+    emit(eventName: string, ...data: ISerializable[]): void;
+    on(eventName: string, callback: (...data: ISerializable[]) => void): void;
+}
 
 export default class NetworkJassPlayer extends JassPlayer {
     private stateWaiting: boolean = false;
 
-    private playerSocket: Socket = [][0];   // [][0] = undefined, but doesn't make the compiler pissy
+    private playerSocket: PlayerSocket = [][0];   // [][0] = undefined, but doesn't make the compiler pissy
     private curState: any = undefined;
     private openQuestions: {[key: string]: [string, any]} = {};
     private questionResolvers: {[key: string]: (response: any) => void} = {};
 
-    public constructor(playerSocket: Socket) {
+    public constructor(playerSocket: PlayerSocket) {
         super();
         this.setSocket(playerSocket);
     }
@@ -24,7 +29,7 @@ export default class NetworkJassPlayer extends JassPlayer {
         return "Player #" + this.index;
     }
 
-    public setSocket(playerSocket: Socket) {
+    public setSocket(playerSocket: PlayerSocket) {
         if (this.playerSocket !== undefined) playerSocket.disconnect();
         this.playerSocket = playerSocket;
         this.sendPacket();
@@ -53,7 +58,7 @@ export default class NetworkJassPlayer extends JassPlayer {
     }
 
     private async sendPacket(additionalInfo?: ISerializable) {
-        await wait(0);
+        await wait(0);  // process rest of this method at the end of event queue
         this.sendPacketNow(additionalInfo);
     }
 
