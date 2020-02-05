@@ -76,7 +76,7 @@ export default class NetworkJassPlayer extends JassPlayer {
 
     private async ask<T>(question: string, args: ISerializable, convertFunc: ((a: any) => T) = (a => a), acceptFunc: ((t: T) => boolean) = (a => true), additionalMessage?: ISerializable): Promise<T> {
         return new Promise<any>((resolve, reject) => {
-            const uid = pseudoUUID();
+            const uid = pseudoUUID();   // TODO: Don't use pseudo-randomness
             this.questionResolvers[uid] = (a) => {
                 let accepted: boolean;
                 let t: T = [][0];
