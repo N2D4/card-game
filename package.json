@@ -5,11 +5,18 @@
   "client_js_src": "src/client/index.ts",
   "client_js_bundle": "dist/index.js",
   "client_files": {
-    "direct-connect.html": "src/client/direct-connect.html",
-    "index.html": "src/client/index.html",
-    "index.css": "src/client/index.css",
-    "index.js": "dist/index.js",
-    "assets/": "assets/"
+    "/direct-connect.html": "src/client/direct-connect.html",
+    "/": "src/client/index.html",
+    "/index.css": "src/client/index.css",
+    "/index.js": "dist/index.js",
+    "/assets/sprites/jass/cardset.png": "assets/sprites/jass/cardset.png",
+    "/assets/sprites/jass/eichel.png": "assets/sprites/jass/eichel.png",
+    "/assets/sprites/jass/obe_abe.png": "assets/sprites/jass/obe_abe.png",
+    "/assets/sprites/jass/roesle.png": "assets/sprites/jass/roesle.png",
+    "/assets/sprites/jass/schelle.png": "assets/sprites/jass/schelle.png",
+    "/assets/sprites/jass/schieb.png": "assets/sprites/jass/schieb.png",
+    "/assets/sprites/jass/schilte.png": "assets/sprites/jass/schilte.png",
+    "/assets/sprites/jass/une_ufe.png": "assets/sprites/jass/une_ufe.png"
   },
   "scripts": {
     "type-check": "tsc --noEmit",

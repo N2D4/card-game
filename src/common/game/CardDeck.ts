@@ -1,4 +1,5 @@
 import Card from 'common/game/Card';
+import {shuffle} from 'src/common/utils';
 
 export default class CardDeck<C extends Card> {
 
@@ -9,10 +10,7 @@ export default class CardDeck<C extends Card> {
     }
 
     public shuffle(): void {
-        for (let i = 0; i < this.cards.length; i++) {
-            const j = Math.floor(Math.random() * this.cards.length);
-            [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
-        }
+        shuffle(this.cards);
     }
 
     public drawOne(amount: number): C {

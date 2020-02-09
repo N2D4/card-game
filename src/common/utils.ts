@@ -9,6 +9,13 @@ export function* range(fromInclusive: number, toExclusive?: number) {
     }
 }
 
+export function shuffle<T>(arr: T[]): void {
+    for (let i = 0; i < arr.length; i++) {
+        const j = Math.floor(Math.random() * arr.length);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+}
+
 export function random<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
