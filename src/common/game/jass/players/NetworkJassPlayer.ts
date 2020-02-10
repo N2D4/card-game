@@ -17,8 +17,9 @@ export default class NetworkJassPlayer extends JassPlayer {
 
     private playerSocket: PlayerSocket = [][0];   // [][0] = undefined, but doesn't make the compiler pissy
     private curState: any = undefined;
-    private openQuestions: {[key: string]: [string, any]} = {};
-    private questionResolvers: {[key: string]: (response: any) => void} = {};
+    private questionsAsked: number = 0;
+    private openQuestions: Map<string, [string, any]> = new Map();
+    private questionResolvers: Map<string, (response: any) => void> = new Map();
 
     public constructor(playerSocket: PlayerSocket) {
         super();
@@ -34,15 +35,15 @@ export default class NetworkJassPlayer extends JassPlayer {
         this.playerSocket = playerSocket;
         this.sendPacket();
         this.playerSocket.on('answer', (data) => {
-            const qid: number = data[0];
-            if (!(qid in this.openQuestions)) {
+            const qid = data[0];
+            const resolve = this.questionResolvers.get(qid);
+            if (resolve === undefined) {
                 this.sendPacket("Invalid question ID: " + qid);
                 return;
             }
 
-            delete this.openQuestions[qid];
-            const resolve = this.questionResolvers[qid];
-            delete this.questionResolvers[qid];
+            this.openQuestions.delete(qid);
+            this.questionResolvers.delete(qid);
             resolve(data[1]);
         });
     }
@@ -52,7 +53,7 @@ export default class NetworkJassPlayer extends JassPlayer {
             ownid: this.index,
             hand: this.hand,
             gameState: this.curState,
-            openQuestions: this.openQuestions,
+            openQuestions: Object.fromEntries(this.openQuestions.entries()),
             additionalInfo: additionalInfo,
         }));
     }
@@ -76,8 +77,9 @@ export default class NetworkJassPlayer extends JassPlayer {
 
     private async ask<T>(question: string, args: ISerializable, convertFunc: ((a: any) => T) = (a => a), acceptFunc: ((t: T) => boolean) = (a => true), additionalMessage?: ISerializable): Promise<T> {
         return new Promise<any>((resolve, reject) => {
-            const uid = pseudoUUID();   // TODO: Don't use pseudo-randomness
-            this.questionResolvers[uid] = (a) => {
+            const uid = String(this.questionsAsked++);
+            console.log('question', uid, question);
+            this.questionResolvers.set(uid, (a) => {
                 let accepted: boolean;
                 let t: T = [][0];
                 try {
@@ -91,8 +93,8 @@ export default class NetworkJassPlayer extends JassPlayer {
                 } else {
                     resolve(t);
                 }
-            };
-            this.openQuestions[uid] = [question, args];
+            });
+            this.openQuestions.set(uid, [question, args]);
             this.sendPacket(additionalMessage);
         });
     }

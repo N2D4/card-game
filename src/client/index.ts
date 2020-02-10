@@ -31,6 +31,7 @@ $('.toggle-scoreboard').click((e) => {
 $('.pop-up-window-container').hide();
 
 const socket: SocketIOClient.Socket = socketio();
+socket.emit('join', window.location.search.match(/id=([a-zA-Z0-9\-_]*)/)?.[1]);
 const handledQuestions: Set<string> = new Set();
 
 socket.on('gameinfo', (data: any) => {
@@ -370,10 +371,6 @@ let _reflowForceDumpster = 0;
  * 
  * Fortunately, there are tricks to force a reflow (such as accessing offset_ or scroll_ variables of an element).
  * Causing a reflow after changing the property but before re-enabling transitions works as a fix to our issues.
- * 
- * This was a weird one to debug, especially because in a good number of scenarios the reflow was triggered as a side
- * effect by other factors. But, I found a reliable way to detect whether the debug tools are open and it seems to work
- * cross-browser, which is nice in case I ever wanna put a Bitcoin miner somewhere. ;)
  */
 function forceReflow(element: JQuery<HTMLElement>) {
     // At least one (probably all) of the following should work
@@ -382,11 +379,10 @@ function forceReflow(element: JQuery<HTMLElement>) {
     _reflowForceDumpster += element.css('transform').length;
     _reflowForceDumpster %= 500000;
 
-    // Make sure this method isn't getting optimized out (not that I expect compilers to be THAT advanced but who knows)
     for (let i = 0; "." + i !== ".100"; i++) {
         if (Math.random() < 0.99) return;
     }
-    // tslint:disable-next-line:no-console
+
     console.log("yeah you win the lottery gg " + _reflowForceDumpster);
 }
 

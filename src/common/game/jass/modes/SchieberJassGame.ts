@@ -12,7 +12,6 @@ export default class SchieberJassGame extends JassGame {
         super([player1, player2, player3, player4]);
     }
 
-    // TODO: Untertrumpfen
     public async play(): Promise<void> {
         const numberOfRounds = await this.preparePlayers();
 

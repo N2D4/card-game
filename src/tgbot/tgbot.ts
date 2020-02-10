@@ -1,17 +1,15 @@
 import TelegramBot from 'node-telegram-bot-api';
-import {LobbyType} from 'src/server/Matchmaker';
 
 function createURLIDFromID(id: string): string {
     if (id.match(/^[a-zA-Z0-9\-_]*$/)) return 'tg-' + id;
-    return 'tg/b64-' + btoa(id);
+    return 'tgb-' + btoa(id);
 }
 
-export function startBot(createLobby: (s: string) => void) {
+export function startBot(createLobby: (s: string) => boolean) {
     const token = process.env.TG_API_KEY || 'not set';
     const gameName = process.env.TG_GAME_NAME || 'not set';
     const admins = new Set((process.env.TG_ADMIN_IDS || '').split(',').map(a => Number(a)));
-    let gameURL = process.env.TG_GAME_URL || 'not set';
-    if (gameURL.endsWith('/')) gameURL = gameURL.substr(0, gameURL.length - 1);
+    const gameURL = process.env.TG_GAME_URL || 'not set';
 
     const bot = new TelegramBot(token, {polling: true});
 
@@ -46,19 +44,19 @@ export function startBot(createLobby: (s: string) => void) {
 
     // user types @bot, selects the game and presses enter
     bot.on('chosen_inline_result', (inlineResult) => {
-        console.log('chosen_inline_result');
+        console.log('chosen_inline_result ' + inlineResult.inline_message_id);
         if (inlineResult.inline_message_id === undefined) throw new Error('inlineResult.inline_message_id is undefined!');
-
-        createLobby(createURLIDFromID(inlineResult.inline_message_id));
     });
 
     // user presses play button on the game message
     bot.on('callback_query', (callbackQuery) => {
-        console.log('callback_query');
+        console.log('callback_query ' + callbackQuery.inline_message_id);
         if (callbackQuery.inline_message_id === undefined) throw new Error('callbackQuery.inline_message_id is undefined!');
 
+        createLobby(createURLIDFromID(callbackQuery.inline_message_id));
+
         bot.answerCallbackQuery(callbackQuery.id, {
-            url: gameURL + '/join/' + createURLIDFromID(callbackQuery.inline_message_id)
+            url: gameURL + '?id=' + createURLIDFromID(callbackQuery.inline_message_id)
         });
     });
 }

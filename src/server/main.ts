@@ -31,6 +31,8 @@ function createLobbyType(id: string, playerCount: number, constructor: unknown) 
 }
 
 const soloDifferenzler = createLobbyType('solo-differenzler', 1, DifferenzlerJassGame);
+const duoDifferenzler = createLobbyType('duo-differenzler', 2, DifferenzlerJassGame);
+const soloSchieber = createLobbyType('solo-schieber', 1, SchieberJassGame);
 const duoSchieber = createLobbyType('duo-schieber', 2, SchieberJassGame);
 
 const defaultLobby = {
@@ -38,6 +40,10 @@ const defaultLobby = {
     type: soloDifferenzler,
     autoRefresh: true
 };
+
+
+const lobbyURLs = new Map<string, Lobby<socketio.Socket>>();        // TODO move to matchmaker (so expiry removes objects from here)
+lobbyURLs.set('default', defaultLobby);
 
 const matchmaker = new Matchmaker(defaultLobby);
 
@@ -55,19 +61,18 @@ try {
     console.error("Error starting Telegram bot!!", e);
 }
 
-const lobbyURLs = new Map<string, Lobby<socketio.Socket>>();        // TODO move to matchmaker (so expiry removes objects from here)
-
-function createLobby(urlID: string) {
-    if (lobbyURLs.has(urlID)) throw new Error(`There's already a lobby with this URL!`);
+function createLobby(urlID: string): boolean {
+    if (lobbyURLs.has(urlID)) return false;
 
     const lobby = {
         id: urlID,
-        type: duoSchieber,
+        type: duoDifferenzler,
         expire: Date.now() + 36*60*60*1000,
         autoRefresh: false
     };
     matchmaker.addLobby(lobby);
     lobbyURLs.set(urlID, lobby);
+    return true;
 }
 
 function startServer() {
@@ -95,10 +100,26 @@ function startServer() {
     const io: socketio.Server = socketio(server);
     
     io.on('connection', (socket) => {
-        const res = matchmaker.queuePlayer(socket, [defaultLobby]);
-        if (res.length !== 1 || res[0] !== true) throw new Error("Assertion error " + res);
+        socket.once('join', (data) => {
+            if (!data) data = 'default';
+            if (typeof data !== 'string') throw new Error(`Not a string!`);
+
+            console.log();
+            console.log("Socket trying to join lobby " + data, socket.id);
+
+            const lobby = lobbyURLs.get(data);
+            if (lobby === undefined) {
+                console.log("Lobby doesn't exist!");
+                socket.emit('unknown-lobby');
+                socket.disconnect();
+                return;
+            }
+
+            const res = matchmaker.queuePlayer(socket, [lobby]);
+            if (res.length !== 1 || res[0] !== true) throw new Error("Assertion error [" + res + "]");
+            console.log("Matchmaker info:", matchmaker.getInfo(s => s.id));
+        });
         console.log();
         console.log("Socket connected", socket.id);
-        console.log("Matchmaker info:", matchmaker.getInfo(s => s.id));
     });    
 }

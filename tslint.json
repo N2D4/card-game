@@ -14,7 +14,7 @@
             "severity": "warning"
         },
         "ordered-imports": {
-            "severity": "warning"
+            "severity": "none"
         },
         "max-classes-per-file": false,
         "no-empty": false,

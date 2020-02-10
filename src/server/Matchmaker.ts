@@ -27,7 +27,7 @@ export default class Matchmaker<P> {
     }
 
     public hasExpired(lobby: Lobby<P>): boolean {
-        return lobby.expire === undefined ? false : lobby.expire >= Date.now();
+        return lobby.expire === undefined ? false : lobby.expire <= Date.now();
     }
 
     public queuePlayer(player: P, lobbies: Lobby<P>[]): boolean[] {
