@@ -26,7 +26,7 @@
     "build:js": "babel src --out-dir lib --extensions \".ts,.tsx\" --source-maps inline",
     "dev-bundle": "webpack --mode=development",
     "prod-bundle": "webpack --mode=production",
-    "run": "node lib/server/main.js",
+    "run": "node -r dotenv-defaults/config lib/server/main.js",
     "start": "npm run-script build:js && npm run-script dev-bundle && npm run-script run"
   },
   "repository": {
@@ -58,9 +58,12 @@
     "webpack-cli": "^3.1.2"
   },
   "dependencies": {
+    "@types/node-telegram-bot-api": "^0.40.2",
     "babel-polyfill": "^6.26.0",
+    "dotenv-defaults": "^1.1.1",
     "express": "^4.16.4",
     "jquery": "^3.3.1",
+    "node-telegram-bot-api": "^0.40.0",
     "socket.io": "^2.1.1",
     "socket.io-client": "^2.1.1"
   }
