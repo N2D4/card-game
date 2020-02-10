@@ -20,8 +20,8 @@ export function startBot() {
         const fromID = msg.from?.id;
         if (fromID !== undefined && admins.has(fromID)) {
             bot.sendMessage(msg.chat.id, `Stopping the server.`);
-            console.log(`Admin with id ${msg.from?.id} stopped the server!`);
-            process.exit();
+            console.log(`Admin with id ${msg.from?.id} stopped the server! Will stop in 1000ms`);
+            setTimeout(() => process.exit(), 1000);
         } else {
             bot.sendMessage(msg.chat.id, `You don't have permissions to do this!`);
         }
