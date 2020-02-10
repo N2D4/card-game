@@ -9,8 +9,39 @@ import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
 import { pseudoUUID } from 'src/common/utils';
 import ExampleJassPlayer from './ExampleJassPlayer';
-import Matchmaker from './Matchmaker';
+import Matchmaker, {Lobby} from './Matchmaker';
 import path from 'path';
+import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
+
+function createLobbyType(id: string, playerCount: number, constructor: unknown) {
+    return {
+        id: id,
+        playerCount: playerCount,
+        startGame: (...players: socketio.Socket[]) => {
+            console.log("Starting game with players", ...players.map(s => s.id));
+            const arr: JassPlayer[] = players.map(s => new NetworkJassPlayer(s));
+            while (arr.length < 4) {
+                arr.push(new ExampleJassPlayer(pseudoUUID()));
+            }
+            // @ts-ignore
+            const game = new constructor(arr[0], arr[1], arr[2], arr[3]);
+            game.play();
+        }
+    };
+}
+
+const soloDifferenzler = createLobbyType('solo-differenzler', 1, DifferenzlerJassGame);
+const duoSchieber = createLobbyType('duo-schieber', 2, SchieberJassGame);
+
+const defaultLobby = {
+    id: 'default',
+    type: soloDifferenzler,
+    autoRefresh: true
+};
+
+const matchmaker = new Matchmaker(defaultLobby);
+
+
 
 try {
     startServer();
@@ -19,27 +50,40 @@ try {
 }
 
 try {
-    startBot();
+    startBot(createLobby);
 } catch (e) {
     console.error("Error starting Telegram bot!!", e);
 }
 
+const lobbyURLs = new Map<string, Lobby<socketio.Socket>>();        // TODO move to matchmaker (so expiry removes objects from here)
 
+function createLobby(urlID: string) {
+    if (lobbyURLs.has(urlID)) throw new Error(`There's already a lobby with this URL!`);
+
+    const lobby = {
+        id: urlID,
+        type: duoSchieber,
+        expire: Date.now() + 36*60*60*1000,
+        autoRefresh: false
+    };
+    matchmaker.addLobby(lobby);
+    lobbyURLs.set(urlID, lobby);
+}
 
 function startServer() {
     const app: express.Application = express();
     const port: number = +(process.env.PORT || 3000);
     
-    const client_files: Map<string, string> = new Map(Object.entries(pkg.client_files));
+    const clientFiles: Map<string, string> = new Map(Object.entries(pkg.client_files));
     app.use((req, res, next) => {
-        const value = client_files.get(req.path);
+        const value = clientFiles.get(req.path);
         if (value !== undefined) {
             res.sendFile(path.resolve(process.cwd(), value));
         } else {
             next();
         }
     });
-    for (const [key, value] of Object.entries(client_files)) {
+    for (const [key, value] of Object.entries(clientFiles)) {
         app.use(key, (req, res, next) => res.sendFile(path.resolve(process.cwd(), value)));
     }
     
@@ -49,30 +93,6 @@ function startServer() {
     });
     
     const io: socketio.Server = socketio(server);
-    
-    
-    
-    const soloDifferenzler = {
-        id: 'differenzler',
-        playerCount: 1,
-        startGame: (...players: socketio.Socket[]) => {
-            console.log("Starting game with players", ...players.map(s => s.id));
-            const arr: JassPlayer[] = players.map(s => new NetworkJassPlayer(s));
-            while (arr.length < 4) {
-                arr.push(new ExampleJassPlayer(pseudoUUID()));
-            }
-            const game = new DifferenzlerJassGame(arr[0], arr[1], arr[2], arr[3]);
-            game.play();
-        }
-    };
-    
-    const defaultLobby = {
-        id: 'default',
-        type: soloDifferenzler,
-        autoRefresh: true
-    };
-    
-    const matchmaker = new Matchmaker(defaultLobby);
     
     io.on('connection', (socket) => {
         const res = matchmaker.queuePlayer(socket, [defaultLobby]);

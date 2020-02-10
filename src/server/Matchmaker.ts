@@ -1,16 +1,17 @@
-type LobbyType<P> = {
+export type LobbyType<P> = {
     id: string,
     playerCount: number,
     startGame: (...p: P[]) => void;
 };
 
-type Lobby<P> = {
+export type Lobby<P> = {
     id: string,
     type: LobbyType<P>,
     expire?: number,
     autoRefresh: boolean
 };
 
+// TODO remove expired objects from the maps
 export default class Matchmaker<P> {
     private allLobbies: Map<Lobby<P>, P[]> = new Map(); // TODO replace P[] with a linked set to allow fast en- and dequeuing, currently unqueuePlayers (hence also tryStartGame and queuePlayer) is O(number of players in game queue) which could be used in a DoS attack
     private players: Map<P, Set<Lobby<P>>> = new Map();
