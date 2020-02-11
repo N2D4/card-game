@@ -13,9 +13,9 @@ export function startBot(createLobby: (s: string) => boolean) {
 
     const bot = new TelegramBot(token, {polling: true});
 
-    bot.onText(/\/play/, (msg) => {
+    /*bot.onText(/\/play/, (msg) => {
         bot.sendGame(msg.chat.id, gameName);
-    });
+    });*/
 
     bot.onText(/\/myid/, (msg) => {
         bot.sendMessage(msg.chat.id, `Your ID: ${msg.from?.id}`);
@@ -46,14 +46,14 @@ export function startBot(createLobby: (s: string) => boolean) {
     bot.on('chosen_inline_result', (inlineResult) => {
         console.log('chosen_inline_result ' + inlineResult.inline_message_id);
         if (inlineResult.inline_message_id === undefined) throw new Error('inlineResult.inline_message_id is undefined!');
+
+        createLobby(createURLIDFromID(inlineResult.inline_message_id));
     });
 
     // user presses play button on the game message
     bot.on('callback_query', (callbackQuery) => {
         console.log('callback_query ' + callbackQuery.inline_message_id);
         if (callbackQuery.inline_message_id === undefined) throw new Error('callbackQuery.inline_message_id is undefined!');
-
-        createLobby(createURLIDFromID(callbackQuery.inline_message_id));
 
         bot.answerCallbackQuery(callbackQuery.id, {
             url: gameURL + '?id=' + createURLIDFromID(callbackQuery.inline_message_id)
