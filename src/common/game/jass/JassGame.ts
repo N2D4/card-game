@@ -32,23 +32,22 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
         return numberOfRounds;
     }
 
-    protected createGameState(player: JassPlayer): IJassGameState {
+    protected createGameState(): IJassGameState {
         return {
             stich: [][0],
             messages: [],
-            playerHandSizes: [],
-            playerNames: [],
+            playerHandSizes: this.players.map(() => 0),
+            playerNames: this.players.map(p => p.getName()),
         };
     }
 
-    protected receiveMessage(player: JassPlayer, gameState: IJassGameState, message: JassGameEvent) {
+    protected updateGameState(gameState: IJassGameState, message: JassGameEvent) {
         if (Array.isArray(message) && message[0] === "stichinfo") {
             gameState.stich = message[1];
         } else {
             gameState.messages.push(Serializer.serialize(message));
         }
         gameState.playerHandSizes = this.players.map(p => p.hand.cards.length);
-        gameState.playerNames = this.players.map(p => p.getName());
     }
 
     // TODO: Delet this; it's only for backwards compatibility so JassGames that weren't updated yet still compile

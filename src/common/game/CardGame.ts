@@ -4,14 +4,11 @@ import { range } from '../utils';
 
 export default abstract class CardGame<P extends Player<G>, C extends Card, G extends IGameState, U extends IGameState.IUpdate> {
     public readonly players: P[];
-    private readonly gameStates: G[];
+    private readonly gameState: G;
 
     constructor(players: P[]) {
         this.players = players;
-        this.gameStates = [];
-        for (const player of this.players) {
-            this.gameStates.push(this.createGameState(player));
-        }
+        this.gameState = this.createGameState();
     }
 
     protected async allPlayers<T>(func: (player: P) => Promise<T>): Promise<T[]> {
@@ -24,15 +21,15 @@ export default abstract class CardGame<P extends Player<G>, C extends Card, G ex
 
     protected async broadcast(...messages: U[]): Promise<void> {
         for (const message of messages) {
-            for (let i = 0; i < this.players.length; i++) {
-                this.receiveMessage(this.players[i], this.gameStates[i], message);
-                this.players[i].sendGameState(this.gameStates[i]);
+            this.updateGameState(this.gameState, message);
+            for (const player of this.players) {
+                player.sendGameState(this.gameState);
             }
         }
     }
 
 
-    public abstract async play(): Promise<void>;
-    protected abstract createGameState(player: P): G;
-    protected abstract receiveMessage(player: P, gameState: G, message: U): void;
+    public abstract async playRound(): Promise<void>;
+    protected abstract createGameState(): G;
+    protected abstract updateGameState(gameState: G, message: U): void;
 }

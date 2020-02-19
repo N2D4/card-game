@@ -12,7 +12,7 @@ export default class SchieberJassGame extends JassGame {
         super([player1, player2, player3, player4]);
     }
 
-    public async play(): Promise<void> {
+    public async playRound(): Promise<void> {
         const numberOfRounds = await this.preparePlayers();
 
         // find player with roesle 7 if starting player is undefined
@@ -21,7 +21,7 @@ export default class SchieberJassGame extends JassGame {
         this.broadcast(["startingPlayer", this.startingPlayer]);
         
         // Choose Trumpf
-        const order: Array<JassStichOrder | "schieb"> = [...JassStichOrder.getSchieberStichOrder()];
+        const order: (JassStichOrder | "schieb")[] = [...JassStichOrder.getSchieberStichOrder()];
         order.push("schieb");
         let trumpf: (JassStichOrder | "schieb") = await this.startingPlayer.chooseStichOrder(order);
         this.broadcast(["trumpf", trumpf]);

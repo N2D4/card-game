@@ -11,7 +11,7 @@ export default class DifferenzlerJassGame extends JassGame {
         super([player1, player2, player3, player4].filter(a => a !== undefined) as JassPlayer[]);
     }
 
-    public async play(): Promise<void> {
+    public async playRound(): Promise<void> {
         // Prepare players
         const numberOfRounds: number = await this.preparePlayers();
 

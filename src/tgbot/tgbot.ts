@@ -5,7 +5,7 @@ function createURLIDFromID(id: string): string {
     return 'tgb-' + btoa(id);
 }
 
-export function startBot(createLobby: (s: string) => boolean) {
+export function startBot(createLobby: (s: string, onUpdate: (e: {inGame: false, players: any[]} | {inGame: true} | null) => void) => boolean) {
     const token = process.env.TG_API_KEY || 'not set';
     const gameName = process.env.TG_GAME_NAME || 'not set';
     const admins = new Set((process.env.TG_ADMIN_IDS || '').split(',').map(a => Number(a)));
@@ -38,16 +38,30 @@ export function startBot(createLobby: (s: string) => boolean) {
         bot.answerInlineQuery(inlineQuery.id, [{
             type: 'game',
             id: gameName,
-            game_short_name: gameName
+            game_short_name: gameName,
+            reply_markup: {inline_keyboard: [[{text: "Connecting...", callback_game: {}}]]}
         }]);
     });
+
 
     // user types @bot, selects the game and presses enter
     bot.on('chosen_inline_result', (inlineResult) => {
         console.log('chosen_inline_result ' + inlineResult.inline_message_id);
         if (inlineResult.inline_message_id === undefined) throw new Error('inlineResult.inline_message_id is undefined!');
 
-        createLobby(createURLIDFromID(inlineResult.inline_message_id));
+        const id = createURLIDFromID(inlineResult.inline_message_id);
+        const success = createLobby(id, (o) => {
+            const caption = o === null             ? `Game has ended`
+                          : o.inGame               ? `In-Game - Click to spectate`
+                          : o.players.length === 0 ? `Play`
+                          :                          `${o.players.length} player${o.players.length === 1 ? '' : 's'} waiting!`;
+
+            bot.editMessageReplyMarkup(
+                {inline_keyboard: [[{text: caption, callback_game: {}}]]},
+                {inline_message_id: inlineResult.inline_message_id}
+            );
+        });
+        if (!success) throw new Error(`Can't create lobby with ID ${id} - does it already exist?`);
     });
 
     // user presses play button on the game message

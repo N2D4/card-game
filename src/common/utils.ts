@@ -1,3 +1,8 @@
+export function assertNonNull<T>(t: T | undefined | null): T {
+    if (t === null || t === undefined) throw new Error(`Assertion error: t=${t} is null or undefined`);
+    return t;
+}
+
 export function* range(fromInclusive: number, toExclusive?: number) {
     if (toExclusive === undefined) {
         toExclusive = fromInclusive;

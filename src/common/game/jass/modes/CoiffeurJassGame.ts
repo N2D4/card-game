@@ -15,7 +15,7 @@ export default class CoiffeurJassGame extends JassGame {
         super([player1, player2, player3, player4]);
     }
 
-    public async play(): Promise<void> {
+    public async playRound(): Promise<void> {
         const numberOfRounds = await this.preparePlayers();
 
         // find player with roesle 7 if starting player is undefined
@@ -26,8 +26,8 @@ export default class CoiffeurJassGame extends JassGame {
         // Choose Trumpf
         let trumpf: (JassStichOrder | "schieb") = "schieb";
         for (let i = 0; trumpf === "schieb"; i++) {
-            const order: Array<JassStichOrder | "schieb"> = [...JassStichOrder.getSchieberStichOrder()];
-            if (i >= this.players.length) {
+            const order: (JassStichOrder | "schieb")[] = [...JassStichOrder.getSchieberStichOrder()];
+            if (i < this.players.length) {
                 order.push("schieb");
             }
             trumpf = await this.startingPlayer.chooseStichOrder(order);
