@@ -1,11 +1,12 @@
 import TelegramBot from 'node-telegram-bot-api';
+import {Lobby, LobbyState} from 'src/server/Matchmaker';
 
 function createURLIDFromID(id: string): string {
     if (id.match(/^[a-zA-Z0-9\-_]*$/)) return 'tg-' + id;
     return 'tgb-' + btoa(id);
 }
 
-export function startBot(createLobby: (s: string, onUpdate: (e: {inGame: false, players: any[]} | {inGame: true} | null) => void) => boolean) {
+export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any, any>) => void) => Lobby<any, any> | null) {
     const token = process.env.TG_API_KEY || 'not set';
     const gameName = process.env.TG_GAME_NAME || 'not set';
     const admins = new Set((process.env.TG_ADMIN_IDS || '').split(',').map(a => Number(a)));
@@ -50,7 +51,7 @@ export function startBot(createLobby: (s: string, onUpdate: (e: {inGame: false, 
         if (inlineResult.inline_message_id === undefined) throw new Error('inlineResult.inline_message_id is undefined!');
 
         const id = createURLIDFromID(inlineResult.inline_message_id);
-        const success = createLobby(id, (o) => {
+        const lobby = createLobby(id, (o) => {
             const caption = o === null             ? `Game has ended`
                           : o.inGame               ? `In-Game - Click to spectate`
                           : o.players.length === 0 ? `Play`
@@ -61,7 +62,7 @@ export function startBot(createLobby: (s: string, onUpdate: (e: {inGame: false, 
                 {inline_message_id: inlineResult.inline_message_id}
             );
         });
-        if (!success) throw new Error(`Can't create lobby with ID ${id} - does it already exist?`);
+        if (lobby === null) throw new Error(`Can't create lobby with ID ${id} - does it already exist?`);
     });
 
     // user presses play button on the game message

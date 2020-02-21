@@ -30,11 +30,23 @@ $('.toggle-scoreboard').click((e) => {
 // close all windows
 $('.pop-up-window-container').hide();
 
+// ...except the lobby one
+$('#lobby-container').show();
+
 const socket: SocketIOClient.Socket = socketio();
 socket.emit('join', window.location.search.match(/id=([a-zA-Z0-9\-_]*)/)?.[1]);
 const handledQuestions: Set<string> = new Set();
 
+
+// add a handler for lobby updates
+socket.on('waiting-players-update', (data: number) => {
+    $('.lobby-playercount').text(data);
+});
+
+// add a handler for game updates
 socket.on('gameinfo', (data: any) => {
+    $('#lobby-container').hide();
+
     const str = JSON.stringify(data, undefined, 4);
     // tslint:disable-next-line:no-console
     console.log(str);

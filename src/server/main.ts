@@ -10,9 +10,10 @@ import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
 import {pseudoUUID} from 'src/common/utils';
 import ExampleJassPlayer from './ExampleJassPlayer';
-import Matchmaker from './Matchmaker';
+import Matchmaker, {LobbyState, LobbyType, Lobby} from './Matchmaker';
 import path from 'path';
 import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
+import {assertNonNull} from 'src/common/utils';
 
 function createLobbyType(id: string, playerCount: number, constructor: unknown) {
     return {
@@ -37,14 +38,8 @@ const duoDifferenzler = createLobbyType('duo-differenzler', 2, DifferenzlerJassG
 const soloSchieber = createLobbyType('solo-schieber', 1, SchieberJassGame);
 const duoSchieber = createLobbyType('duo-schieber', 2, SchieberJassGame);
 
-const defaultLobby = {
-    id: 'default',
-    type: soloDifferenzler,
-    autoRefresh: true
-};
-
-
-const matchmaker = new Matchmaker(defaultLobby);
+const matchmaker = new Matchmaker();
+const defaultLobby = assertNonNull(createLobby('default', undefined, soloDifferenzler, true));
 
 
 
@@ -64,13 +59,29 @@ try {
 
 setInterval(() => console.log(`15 minutes have passed`), 15*60*1000);
 
-function createLobby(urlID: string, onUpdate: (e: {inGame: false, players: socketio.Socket[]} | {inGame: true, game: JassGame} | null) => void): boolean {
-    if (matchmaker.getLobby(urlID) !== undefined) return false;
+function createLobby(
+    urlID: string,
+    onUpdate?: (e: LobbyState<socketio.Socket, JassGame>) => void,
+    type: LobbyType<socketio.Socket, JassGame> = duoSchieber,
+    autoRefresh: boolean = false
+): Lobby<socketio.Socket, JassGame> | null {
+    const mOnUpdate = onUpdate ?? (_ => {});
+
+    if (matchmaker.getLobby(urlID) !== undefined) return null;
+
+    const newOnUpdate = (e: LobbyState<socketio.Socket, JassGame>) => {
+        mOnUpdate(e);
+        if (e !== null) {
+            if (!e.inGame) {
+                e.players.forEach(p => p.emit('waiting-players-update', e.players.length));
+            }
+        }
+    }
 
     const lobby = {
         id: urlID,
-        type: duoDifferenzler,
-        onUpdate: onUpdate,
+        type: type,
+        onUpdate: newOnUpdate,
         expire: Date.now() + 36*60*60*1000,
         autoRefresh: false
     };
@@ -78,7 +89,7 @@ function createLobby(urlID: string, onUpdate: (e: {inGame: false, players: socke
     console.log(`Created lobby ${urlID}`);
     console.log("Matchmaker info:", matchmaker.getInfo(s => s.id, g => g.constructor.name));
     matchmaker.addLobby(lobby);
-    return true;
+    return lobby;
 }
 
 function startServer() {
