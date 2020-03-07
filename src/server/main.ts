@@ -15,10 +15,10 @@ import path from 'path';
 import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import {assertNonNull} from 'src/common/utils';
 
-function createLobbyType(id: string, playerCount: number, constructor: unknown) {
+function createLobbyType(id: string, maxPlayerCount: number, constructor: unknown) {
     return {
         id: id,
-        playerCount: playerCount,
+        maxPlayerCount: maxPlayerCount,
         startGame: (onClose: () => void, ...players: socketio.Socket[]) => {
             console.log("Starting game with players", ...players.map(s => s.id));
             const arr: JassPlayer[] = players.map(s => new NetworkJassPlayer(s));
@@ -35,11 +35,18 @@ function createLobbyType(id: string, playerCount: number, constructor: unknown) 
 
 const soloDifferenzler = createLobbyType('solo-differenzler', 1, DifferenzlerJassGame);
 const duoDifferenzler = createLobbyType('duo-differenzler', 2, DifferenzlerJassGame);
+const differenzler = createLobbyType('duo-differenzler', 4, DifferenzlerJassGame);
 const soloSchieber = createLobbyType('solo-schieber', 1, SchieberJassGame);
 const duoSchieber = createLobbyType('duo-schieber', 2, SchieberJassGame);
+const schieber = createLobbyType('duo-schieber', 4, SchieberJassGame);
 
-const matchmaker = new Matchmaker();
-const defaultLobby = assertNonNull(createLobby('default', undefined, soloDifferenzler, true));
+const matchmaker = new Matchmaker<socketio.Socket, JassGame>();
+const defaultLobby = assertNonNull(createLobby('default', (state, matchmaker) => {
+    if (state === null) return;
+    if (state.inGame) return;
+    if (state.players.length < state.lobby.type.maxPlayerCount) return;
+    matchmaker.startGame(state.lobby);
+}, soloDifferenzler, true));
 
 
 
@@ -61,19 +68,19 @@ setInterval(() => console.log(`15 minutes have passed`), 15*60*1000);
 
 function createLobby(
     urlID: string,
-    onUpdate?: (e: LobbyState<socketio.Socket, JassGame>) => void,
-    type: LobbyType<socketio.Socket, JassGame> = duoSchieber,
+    afterUpdate?: (e: LobbyState<socketio.Socket, JassGame>, m: Matchmaker<socketio.Socket, JassGame>) => void,
+    type: LobbyType<socketio.Socket, JassGame> = schieber,
     autoRefresh: boolean = false
 ): Lobby<socketio.Socket, JassGame> | null {
-    const mOnUpdate = onUpdate ?? (_ => {});
+    const mAfterUpdate = afterUpdate ?? (_ => {});
 
     if (matchmaker.getLobby(urlID) !== undefined) return null;
 
-    const newOnUpdate = (e: LobbyState<socketio.Socket, JassGame>) => {
-        mOnUpdate(e);
+    const newAfterUpdate = (e: LobbyState<socketio.Socket, JassGame>, m: Matchmaker<socketio.Socket, JassGame>) => {
+        mAfterUpdate(e, m);
         if (e !== null) {
             if (!e.inGame) {
-                e.players.forEach(p => p.emit('waiting-players-update', e.players.length));
+                e.players.forEach(p => p.emit('lobby.waiting-players-update', e.players.length));
             }
         }
     }
@@ -81,9 +88,9 @@ function createLobby(
     const lobby = {
         id: urlID,
         type: type,
-        onUpdate: newOnUpdate,
+        afterUpdate: newAfterUpdate,
         expire: Date.now() + 36*60*60*1000,
-        autoRefresh: false
+        autoRefresh: autoRefresh
     };
 
     console.log(`Created lobby ${urlID}`);
@@ -117,7 +124,7 @@ function startServer() {
     const io: socketio.Server = socketio(server);
     
     io.on('connection', (socket) => {
-        socket.once('join', (data) => {
+        socket.once('lobby.join', (data) => {
             if (!data) data = 'default';
             if (typeof data !== 'string') throw new Error(`Not a string!`);
 
@@ -126,19 +133,45 @@ function startServer() {
 
             const lobby = matchmaker.getLobby(data);
             if (lobby === undefined) {
-                console.log("Lobby doesn't exist!");
-                socket.emit('unknown-lobby');
+                console.log(`Lobby with id ${data} doesn't exist!`);
+                socket.emit('lobby.error', 'unknown-lobby-id');
                 socket.disconnect();
                 return;
             }
 
             const res = matchmaker.queuePlayer(socket, [lobby]);
-            if (res.length !== 1 || res[0] !== true) {
-                console.log(`Error joining lobby! Is it full, has the game started or already ended? ${JSON.stringify(res)}`);
+            if (res.length !== 1 || res[0] !== 'success') {
+                console.log(`Error joining lobby: ${JSON.stringify(res)}`);
+                socket.emit('lobby.error', 'cant-join-lobby', res[0]);
+                socket.disconnect();
+                return;
             }
-            console.log("Matchmaker info:", matchmaker.getInfo(s => s.id, g => g.constructor.name));
+
+            console.log("Player joined successfully!", matchmaker.getInfo(s => s.id, g => g.constructor.name));
         });
+    
+        socket.on('lobby.request-start-game', (data) => {
+            if (!data) data = 'default';
+            if (typeof data !== 'string') throw new Error(`Not a string!`);
+            
+            const lobby = matchmaker.getLobby(data);
+            if (lobby === undefined) {
+                console.log(`Lobby with id ${data} doesn't exist!`);
+                socket.emit('lobby.error', 'unknown-lobby-id');
+                return;
+            }
+
+            const state = matchmaker.getLobbyState(lobby);
+            if (state === null || state.inGame || !state.players.includes(socket)) {
+                socket.emit('lobby.error', 'not-in-waiting-lobby');
+                return;
+            }
+
+            console.log(`Socket trying to start lobby ${data}`);
+            matchmaker.startGame(lobby);
+        });
+
         console.log();
         console.log("Socket connected", socket.id);
-    });    
+    });
 }

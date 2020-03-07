@@ -34,13 +34,24 @@ $('.pop-up-window-container').hide();
 $('#lobby-container').show();
 
 const socket: SocketIOClient.Socket = socketio();
-socket.emit('join', window.location.search.match(/id=([a-zA-Z0-9\-_]*)/)?.[1]);
+const lobbyId = window.location.search.match(/id=([a-zA-Z0-9\-_]*)/)?.[1];
+socket.emit('lobby.join', lobbyId);
 const handledQuestions: Set<string> = new Set();
 
+// start game if the button is clicked
+$('.lobby-startgame').click((e) => {
+    socket.emit('lobby.request-start-game', lobbyId);
+});
 
 // add a handler for lobby updates
-socket.on('waiting-players-update', (data: number) => {
+socket.on('lobby.waiting-players-update', (data: number) => {
     $('.lobby-playercount').text(data);
+});
+
+// add a handler for lobby errors
+socket.on('lobby.error', (errtype: string, data: any) => {
+    console.error(`Unhandled lobby error!`, errtype, data);
+    alert(`Unhandled lobby error! More info in the console.\n\n${errtype}: ${JSON.stringify(data)}`);
 });
 
 // add a handler for game updates

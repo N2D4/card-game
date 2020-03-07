@@ -1,17 +1,20 @@
 import {assertNonNull} from 'src/common/utils';
 
-export type LobbyState<P, G> = {inGame: false, players: P[]} | {inGame: true, game: G} | null;
+export type LobbyState<P, G> = null | (
+    ({inGame: false, players: P[]} | {inGame: true, game: G})
+    & {lobby: Lobby<P, G>}
+);
 
 export type LobbyType<P, G> = {
     readonly id: string,
-    readonly playerCount: number,
+    readonly maxPlayerCount: number,
     readonly startGame: (onClose: () => void, ...p: P[]) => G;
 };
 
 export type Lobby<P, G> = {
     readonly id: string,
     readonly type: LobbyType<P, G>,
-    readonly onUpdate?: (e: LobbyState<P, G>) => void,
+    readonly afterUpdate?: (e: LobbyState<P, G>, m: Matchmaker<P, G>) => void,
     readonly expire?: number,
     readonly autoRefresh: boolean
 };
@@ -48,26 +51,32 @@ export default class Matchmaker<P, G> {
 
     public getLobbyState(lobby: Lobby<P, G>): LobbyState<P, G> {
         const players = this.joinableLobbies.get(lobby);
-        if (players !== undefined) return {inGame: false, players};
+        if (players !== undefined) return {inGame: false, players, lobby};
         const game = this.inGameLobbies.get(lobby);
-        if (game !== undefined) return {inGame: true, game};
+        if (game !== undefined) return {inGame: true, game, lobby};
         return null;
     }
 
-    public queuePlayer(player: P, lobbies: Lobby<P, G>[]): boolean[] {
-        const result = lobbies.map(q => this.joinableLobbies.has(q) && !this.hasExpired(q));
-        lobbies = lobbies.filter((_, i) => result[i] === true);
+    public queuePlayer(player: P, lobbies: Lobby<P, G>[]): ("unknown" | "ingame" | "full" | "expired" | "success")[] {
+        const result = lobbies.map(lobby => {
+            const state = this.getLobbyState(lobby);
+            if (state === null) return 'unknown';
+            if (state.inGame) return 'ingame';
+            if (!lobby.autoRefresh && state.players.length >= lobby.type.maxPlayerCount) return 'full';
+            if (this.hasExpired(lobby)) return 'expired';
+            return 'success';
+        });
+        lobbies = lobbies.filter((_, i) => result[i] === 'success');
 
         this.unqueuePlayer(player);
 
         const lobbySet = new Set(lobbies);
         this.players.set(player, lobbySet);
-        for (const q of lobbySet) {
-            const players = assertNonNull(this.joinableLobbies.get(q));
+        for (const lobby of lobbySet) {
+            const players = assertNonNull(this.joinableLobbies.get(lobby));
             players.push(player);
+            this.sendUpdateSoon(lobby);
         }
-
-        lobbySet.forEach(l => this.tryStartGame(l));
 
         return result;
     }
@@ -91,24 +100,30 @@ export default class Matchmaker<P, G> {
         players.forEach(p => this.players.delete(p));
     }
 
-    private tryStartGame(lobby: Lobby<P, G>) {
+    public startGame(lobby: Lobby<P, G>, playerCount?: number) {
         const waitingPlayers = this.joinableLobbies.get(lobby);
-        if (waitingPlayers === undefined) throw new Error("Assertion error: Lobby not joinable!");
+        if (waitingPlayers === undefined) throw new Error("Given lobby is not waiting for a game!");
 
-        const pc = lobby.type.playerCount;
-        let i;
-        for (i = 0; i + pc <= waitingPlayers.length; i += pc) {
-            if (!lobby.autoRefresh && waitingPlayers.length > i + pc) throw new Error("Assertion error: Too many players in lobby!")
-
-            let isClosed = false;
-            const ogOnClose = () => (isClosed = true, this.sendUpdateSoon(lobby));
-            const onClose = lobby.autoRefresh ? ogOnClose : () => (this.removeInGameLobby(lobby), ogOnClose());
-            if (!lobby.autoRefresh) this.joinableLobbies.delete(lobby);
-            const game = lobby.type.startGame(onClose, ...waitingPlayers.slice(i, i + pc));
-            if (!lobby.autoRefresh && !isClosed) this.inGameLobbies.set(lobby, game);
+        if (playerCount === undefined) playerCount = Math.min(lobby.type.maxPlayerCount, waitingPlayers.length);
+        if (!Number.isInteger(playerCount)) throw new Error("Player count not an integer!");
+        if (playerCount < 1 || playerCount > waitingPlayers.length) {
+            throw new Error(`Player count ${playerCount} not in [1, ${waitingPlayers.length}]!`);
+        }
+        if (!lobby.autoRefresh && waitingPlayers.length > playerCount) {
+            throw new Error("Too many players in lobby! This lobby does not auto-refresh");
         }
 
-        this.unqueuePlayers(waitingPlayers.slice(0, i));
+        const players = waitingPlayers.slice(0, playerCount);
+
+        let isClosed = false;
+        const ogOnClose = () => (isClosed = true, this.sendUpdateSoon(lobby));
+        const onClose = lobby.autoRefresh ? ogOnClose : () => (this.removeInGameLobby(lobby), ogOnClose());
+
+        if (!lobby.autoRefresh) this.joinableLobbies.delete(lobby);
+        const game = lobby.type.startGame(onClose, ...players);
+        if (!lobby.autoRefresh && !isClosed) this.inGameLobbies.set(lobby, game);
+
+        this.unqueuePlayers(players);
         this.sendUpdateSoon(lobby);
     }
 
@@ -120,12 +135,11 @@ export default class Matchmaker<P, G> {
     private sendUpdateSoon(lobby: Lobby<P, G>) {
         if (!this.unsentUpdates.has(lobby)) {
             setTimeout(() => {
-                lobby.onUpdate?.(this.getLobbyState(lobby));
+                lobby.afterUpdate?.(this.getLobbyState(lobby), this);
                 this.unsentUpdates.delete(lobby);
             }, 0);
             this.unsentUpdates.add(lobby);
         }
-        
     }
 
     public getInfo(playerMap: (p: P) => any, gameMap: (g: G) => any): {} {
