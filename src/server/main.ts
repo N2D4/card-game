@@ -41,11 +41,11 @@ const duoSchieber = createLobbyType('duo-schieber', 2, SchieberJassGame);
 const schieber = createLobbyType('duo-schieber', 4, SchieberJassGame);
 
 const matchmaker = new Matchmaker<socketio.Socket, JassGame>();
-const defaultLobby = assertNonNull(createLobby('default', (state, matchmaker) => {
+const defaultLobby = assertNonNull(createLobby('default', (state, mm) => {
     if (state === null) return;
     if (state.inGame) return;
     if (state.players.length < state.lobby.type.maxPlayerCount) return;
-    matchmaker.startGame(state.lobby);
+    mm.startGame(state.lobby);
 }, soloDifferenzler, true));
 
 
