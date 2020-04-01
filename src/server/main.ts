@@ -15,19 +15,30 @@ import path from 'path';
 import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import {assertNonNull} from 'src/common/utils';
 
+
+function createJassPlayer(socket: socketio.Socket): [JassPlayer, () => void] {
+    const player = new NetworkJassPlayer(socket);
+    return [player, () => void player.destroy()];
+}
+
 function createLobbyType(id: string, maxPlayerCount: number, constructor: unknown) {
     return {
         id: id,
         maxPlayerCount: maxPlayerCount,
         startGame: (onClose: () => void, ...players: socketio.Socket[]) => {
             console.log("Starting game with players", ...players.map(s => s.id));
-            const arr: JassPlayer[] = players.map(s => new NetworkJassPlayer(s));
+            const arr = players.map(s => createJassPlayer(s));
             while (arr.length < 4) {
-                arr.push(new ExampleJassPlayer(pseudoUUID()));
+                arr.push([new ExampleJassPlayer(pseudoUUID()), () => 0]);
             }
             // @ts-ignore
-            const game = new constructor(arr[0], arr[1], arr[2], arr[3]);
-            game.playRound().then(onClose);
+            const game = new constructor(arr[0][0], arr[1][0], arr[2][0], arr[3][0]);
+            game.playRound().then(() => {
+                onClose();
+                for (const p of arr) {
+                    p[1]();
+                }
+            });
             return game;
         }
     };
@@ -124,6 +135,22 @@ function startServer() {
     const io: socketio.Server = socketio(server);
     
     io.on('connection', (socket) => {
+        socket.once('lobby.can-reconnect', (token, resp) => {
+            if (typeof token !== 'string') throw new Error(`Token is not a string!`);
+            if (typeof resp !== 'function') throw new Error(`Response callback is not a function!`);
+            resp(NetworkJassPlayer.fromToken(token) !== null);
+        });
+
+        socket.once('lobby.reconnect', (token) => {
+            const player = NetworkJassPlayer.fromToken(token);
+            if (player === null) {
+                socket.emit('lobby.error', 'unknown-reconnect-token');
+                socket.disconnect();
+                return;
+            }
+            player.setSocket(socket);
+        });
+
         socket.once('lobby.join', (data) => {
             if (!data) data = 'default';
             if (typeof data !== 'string') throw new Error(`Not a string!`);

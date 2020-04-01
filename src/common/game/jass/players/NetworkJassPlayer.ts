@@ -5,6 +5,8 @@ import Serializer from "common/serialize/Serializer";
 import { pseudoUUID, wait } from "common/utils";
 import ISerializable from "src/common/serialize/ISerializable";
 import JassPlayer from "./JassPlayer";
+import crypto from 'crypto';
+import util from 'util';
 
 type PlayerSocket = {
     disconnect(): void;
@@ -16,10 +18,15 @@ type QuestionID = string;
 
 type Timeout<T> = 'none' | {ms: number, value: T};
 
-export default class NetworkJassPlayer extends JassPlayer {
-    private stateWaiting: boolean = false;
+type PlayerToken = string;
 
-    private playerSocket: PlayerSocket = [][0];   // [][0] = undefined, but doesn't make the compiler pissy
+export default class NetworkJassPlayer extends JassPlayer {
+    private static playerTokens = new Map<PlayerToken, NetworkJassPlayer>(); // TODO prevent memory leaks
+
+    private readonly secretToken: Promise<PlayerToken>;
+    private secretTokenValue: PlayerToken | undefined;
+    private stateWaiting: boolean = false;
+    private playerSocket: PlayerSocket = undefined as any;
     private curState: any = undefined;
     private questionsAsked: number = 0;
     private openQuestions: Map<QuestionID, [string, any]> = new Map();
@@ -27,7 +34,21 @@ export default class NetworkJassPlayer extends JassPlayer {
 
     public constructor(playerSocket: PlayerSocket) {
         super();
+        this.secretToken = (async () => {
+            this.secretTokenValue = (await util.promisify(crypto.randomBytes)(32)).toString('base64');
+            NetworkJassPlayer.playerTokens.set(this.secretTokenValue, this);
+            return this.secretTokenValue;
+        })();
         this.setSocket(playerSocket);
+    }
+
+    public static fromToken(token: PlayerToken): NetworkJassPlayer | null {
+        return NetworkJassPlayer.playerTokens.get(token) ?? null;
+    }
+
+    public async destroy() {
+        NetworkJassPlayer.playerTokens.delete(await this.secretToken);
+        this.playerSocket.disconnect();
     }
 
     public getName(): string {
@@ -35,7 +56,7 @@ export default class NetworkJassPlayer extends JassPlayer {
     }
 
     public setSocket(playerSocket: PlayerSocket) {
-        if (this.playerSocket !== undefined) playerSocket.disconnect();
+        if (this.playerSocket !== undefined) this.playerSocket.disconnect();
         this.playerSocket = playerSocket;
         this.sendPacket();
         this.playerSocket.on('answer', (data) => {
@@ -47,7 +68,7 @@ export default class NetworkJassPlayer extends JassPlayer {
                 this.sendPacket("Invalid question ID: " + qid);
                 return;
             }
-            
+
             resolve(data[1]);
         });
     }
@@ -73,22 +94,34 @@ export default class NetworkJassPlayer extends JassPlayer {
         return promise;
     }
 
+    private async ensureToken() {
+        await this.secretToken;
+    }
+
     private sendPacketNow(additionalInfo?: ISerializable) {
+        if (this.secretTokenValue === undefined) {
+            throw new Error('Token not done generating! Please await .ensureToken() before calling .sendPacketNow()');
+        }
         this.playerSocket.emit('gameinfo', Serializer.serialize({
             ownid: this.index,
             hand: this.hand,
             gameState: this.curState,
             openQuestions: Object.fromEntries(this.openQuestions.entries()),
             additionalInfo: additionalInfo,
+            token: this.secretTokenValue,
         }));
     }
 
     private async sendPacket(additionalInfo?: ISerializable) {
+        await this.ensureToken();
+
         await wait(0);  // process rest of this method at the end of event queue
         this.sendPacketNow(additionalInfo);
     }
 
     public async sendGameState(state: any): Promise<void> {
+        await this.ensureToken();
+
         this.curState = state;
 
         // If we only just queued a state packet, don't queue again

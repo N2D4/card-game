@@ -116,8 +116,8 @@ export default class Matchmaker<P, G> {
         const players = waitingPlayers.slice(0, playerCount);
 
         let isClosed = false;
-        const ogOnClose = () => (isClosed = true, this.sendUpdateSoon(lobby));
-        const onClose = lobby.autoRefresh ? ogOnClose : () => (this.removeInGameLobby(lobby), ogOnClose());
+        const ogOnClose = () => void (isClosed = true, this.sendUpdateSoon(lobby));
+        const onClose = lobby.autoRefresh ? ogOnClose : () => void (this.removeInGameLobby(lobby), ogOnClose());
 
         if (!lobby.autoRefresh) this.joinableLobbies.delete(lobby);
         const game = lobby.type.startGame(onClose, ...players);

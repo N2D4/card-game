@@ -53,7 +53,7 @@ export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any, 
         const id = createURLIDFromID(inlineResult.inline_message_id);
         const lobby = createLobby(id, (o) => {
             const caption = o === null             ? `Game has ended`
-                          : o.inGame               ? `In-Game - Click to spectate`
+                          : o.inGame               ? `In-Game`
                           : o.players.length === 0 ? `Play`
                           :                          `${o.players.length} player${o.players.length === 1 ? '' : 's'} waiting!`;
 

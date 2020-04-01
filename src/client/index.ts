@@ -5,12 +5,16 @@ import socketio from 'socket.io-client';
 
 const _JASS_IS_DEBUG = false;
 
-
-
 (window as unknown as {jQuery: any}).jQuery = $;
 
 // Add touch start event listener for iOS; this allows :hover CSS selector to do its job
 document.addEventListener("touchstart", () => {}, true);
+
+
+// reload page if button is clicked
+$('.reload-page').click((e) => {
+    location.reload(true);
+});
 
 // read slider input and display value
 $('#slider').on('input', () => {
@@ -34,8 +38,19 @@ $('.pop-up-window-container').hide();
 $('#lobby-container').show();
 
 const socket: SocketIOClient.Socket = socketio();
-const lobbyId = window.location.search.match(/id=([a-zA-Z0-9\-_]*)/)?.[1];
-socket.emit('lobby.join', lobbyId);
+const lobbyId = location.search.match(/id=([a-zA-Z0-9\-_]*)/)?.[1];
+const reconnectToken = localStorage.getItem('r7_reconnect_token');
+if (!reconnectToken) {
+    socket.emit('lobby.join', lobbyId);
+} else {
+    socket.emit('lobby.can-reconnect', reconnectToken, (canReconnect: boolean) => {
+        if (canReconnect) {
+            socket.emit('lobby.reconnect', reconnectToken);
+        } else {
+            socket.emit('lobby.join', lobbyId);
+        }
+    });
+}
 const handledQuestions: Set<string> = new Set();
 
 // start game if the button is clicked
@@ -56,10 +71,11 @@ socket.on('lobby.error', (errtype: string, data: any) => {
 
 // add a handler for game updates
 socket.on('gameinfo', (data: any) => {
+    localStorage.setItem('r7_reconnect_token', data.token);  
+
     $('#lobby-container').hide();
 
     const str = JSON.stringify(data, undefined, 4);
-    // tslint:disable-next-line:no-console
     console.log(str);
 
 
