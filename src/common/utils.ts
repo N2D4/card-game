@@ -51,8 +51,10 @@ export function pseudoUUID(): string {
     });
 }
 
-export async function wait(ms: number): Promise<void> {
-    await new Promise<void>(resolve => setTimeout(resolve, ms));
+export async function wait<T>(ms: number, value?: T): Promise<T> {
+    return await new Promise<T>(resolve => {
+        setTimeout(() => resolve(value), ms);
+    });
 }
 
 export function htmlEscape(s: string) {

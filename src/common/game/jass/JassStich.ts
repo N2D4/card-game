@@ -5,7 +5,7 @@ import JassStichOrder from './JassStichOrder';
 import JassPlayer from './players/JassPlayer';
 
 export default class JassStich {
-    public readonly cards: Array<{player: JassPlayer, card: JassCard}> = [];
+    public readonly cards: {player: JassPlayer, card: JassCard}[] = [];
 
     public constructor(public readonly trumpf: JassStichOrder) { }
 

@@ -6,11 +6,15 @@ import { pseudoUUID, wait } from "common/utils";
 import ISerializable from "src/common/serialize/ISerializable";
 import JassPlayer from "./JassPlayer";
 
-interface PlayerSocket {
+type PlayerSocket = {
     disconnect(): void;
     emit(eventName: string, ...data: ISerializable[]): void;
     on(eventName: string, callback: (...data: ISerializable[]) => void): void;
 }
+
+type QuestionID = string;
+
+type Timeout<T> = 'none' | {ms: number, value: T};
 
 export default class NetworkJassPlayer extends JassPlayer {
     private stateWaiting: boolean = false;
@@ -18,8 +22,8 @@ export default class NetworkJassPlayer extends JassPlayer {
     private playerSocket: PlayerSocket = [][0];   // [][0] = undefined, but doesn't make the compiler pissy
     private curState: any = undefined;
     private questionsAsked: number = 0;
-    private openQuestions: Map<string, [string, any]> = new Map();
-    private questionResolvers: Map<string, (response: any) => void> = new Map();
+    private openQuestions: Map<QuestionID, [string, any]> = new Map();
+    private questionResolvers: Map<QuestionID, (response: any) => void> = new Map();
 
     public constructor(playerSocket: PlayerSocket) {
         super();
@@ -35,17 +39,38 @@ export default class NetworkJassPlayer extends JassPlayer {
         this.playerSocket = playerSocket;
         this.sendPacket();
         this.playerSocket.on('answer', (data) => {
+            if (!Array.isArray(data) || data.length !== 2) throw new Error('Malformed input!');
+
             const qid = data[0];
             const resolve = this.questionResolvers.get(qid);
             if (resolve === undefined) {
                 this.sendPacket("Invalid question ID: " + qid);
                 return;
             }
-
-            this.openQuestions.delete(qid);
-            this.questionResolvers.delete(qid);
+            
             resolve(data[1]);
         });
+    }
+
+    private addQuestion(question: any, additionalMessage?: unknown): Promise<unknown> & {removeQuestion(): void} {
+        const qid = String(this.questionsAsked++);
+        console.log('question', qid, question);
+        this.openQuestions.set(qid, question);
+        const promise: any = new Promise(resolve => {
+            this.questionResolvers.set(qid, (a) => {
+                promise.removeQuestion();
+                resolve(a);
+            });
+        });
+        Object.defineProperty(promise, 'removeQuestion', {
+            enumerable: false,
+            value: () => {
+                this.openQuestions.delete(qid);
+                this.questionResolvers.delete(qid);
+            }
+        });
+        this.sendPacket(additionalMessage);
+        return promise;
     }
 
     private sendPacketNow(additionalInfo?: ISerializable) {
@@ -75,52 +100,83 @@ export default class NetworkJassPlayer extends JassPlayer {
         this.sendPacketNow();
     }
 
-    private async ask<T>(question: string, args: ISerializable, convertFunc: ((a: any) => T) = (a => a), acceptFunc: ((t: T) => boolean) = (a => true), additionalMessage?: ISerializable): Promise<T> {
-        return new Promise<any>((resolve, reject) => {
-            const uid = String(this.questionsAsked++);
-            console.log('question', uid, question);
-            this.questionResolvers.set(uid, (a) => {
-                let accepted: boolean;
-                let t: T = [][0];
-                try {
-                    t = convertFunc(a);
-                    accepted = acceptFunc(t);
-                } catch (e) {
-                    accepted = false;
-                }
-                if (!accepted) {
-                    this.ask(question, args, convertFunc, acceptFunc, ["Response not accepted to question " + uid, { response: a }]).then(resolve);
-                } else {
-                    resolve(t);
-                }
-            });
-            this.openQuestions.set(uid, [question, args]);
-            this.sendPacket(additionalMessage);
-        });
+    private async ask<T>(
+        question: string,
+        args: ISerializable,
+        timeout: Timeout<T> | Promise<T>,
+        convertFunc: ((a: any) => T) = (a => a),
+        acceptFunc: ((t: T) => boolean) = (a => true),
+        additionalMessage?: ISerializable,
+    ): Promise<T> {
+        if (timeout === 'none') timeout = new Promise(() => {}); // never resolves
+        else if ('ms' in timeout && 'value' in timeout) timeout = wait(timeout.ms, timeout.value);
+
+        const questionPromise = this.addQuestion([question, args], additionalMessage);
+        const playerAnswerPromise = (async () => {
+            const a = await questionPromise;
+            try {
+                const t = convertFunc(a);
+                console.warn('t', t, a);
+                if (acceptFunc(t)) return t;
+            } catch (e) {
+                console.error('error accepting request', e);
+                // do nothing...
+            }
+            return this.ask(
+                question,
+                args,
+                timeout,
+                convertFunc,
+                acceptFunc,
+                ["Response not accepted", { question: [question, args], response: a }]
+            );
+        })();
+
+        const timeoutPromise = (async () => {
+            const res = await timeout;
+            questionPromise.removeQuestion();
+            return res;
+        })();
+
+        return await Promise.race([playerAnswerPromise, timeoutPromise]);
     }
 
-    private async askIntRange(question: string, rangeMin: number, rangeMax: number): Promise<number> {
-        return await this.ask(question, [rangeMin, rangeMax], Number, a => a >= rangeMin && a < rangeMax && Number.isInteger(a));
+    private async askIntRange(question: string, rangeMin: number, rangeMax: number, timeout: Timeout<number>): Promise<number> {
+        return await this.ask(
+            question,
+            [rangeMin, rangeMax],
+            timeout,
+            Number,
+            a => a >= rangeMin && a < rangeMax && Number.isInteger(a)
+        );
     }
 
-    private async askChoose<T>(question: string, choices: T[]): Promise<T> {
-        return choices[await this.ask(question, choices, Number, a => a >= 0 && a < choices.length && Number.isInteger(a))];
+    private async askChoose<T>(question: string, choices: T[], timeout: Timeout<T>): Promise<T> {
+        const chosen = await this.ask(
+            question,
+            choices,
+            timeout === 'none' ? 'none' : {ms: timeout.ms, value: -1},
+            a => Number(a),
+            a => a >= 0 && a < choices.length && Number.isInteger(a),
+        );
+        if (chosen === -1 && timeout !== 'none') return timeout.value;
+        return choices[chosen];
     }
 
     public async chooseCard(choices: JassCard[]): Promise<JassCard> {
-        return await this.askChoose("chooseCard", choices);
+        return await this.askChoose("chooseCard", choices, {ms: 45000, value: choices[0]});
     }
 
     public async askForScore(rangeMin: number, rangeMax: number): Promise<number> {
-        return await this.askIntRange("guessScore", rangeMin, rangeMax + 1);
+        return await this.askIntRange("guessScore", rangeMin, rangeMax + 1, {ms: 60000, value: 40});
     }
 
     public async chooseStichOrder<G, T extends JassStichOrder | G>(choices: T[]): Promise<T> {
-        return await this.askChoose("chooseTrumpf", choices);
+        return await this.askChoose("chooseTrumpf", choices, {ms: 60000, value: choices[0]});
     }
 
     public async chooseToWyys(wyys: JassWyys[]): Promise<boolean> {
-        return await this.ask("youWannaWyys", wyys, Boolean);
+        return await this.ask("youWannaWyys", wyys, {ms: 30000, value: false}, a => Boolean(a));
     }
 
 }
