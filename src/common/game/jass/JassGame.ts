@@ -50,7 +50,7 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
         gameState.playerHandSizes = this.players.map(p => p.hand.cards.length);
     }
 
-    // TODO: Delet this; it's only for backwards compatibility so JassGames that weren't updated yet still compile
+    // TODO: Delet this; it's only for backwards compatibility so JassGames that weren't updated still compile
     public broadcastB(...args: any[]) {
         throw new Error("Removed feature; use new broadcast API");
     }

@@ -78,14 +78,16 @@ socket.on('gameinfo', (data: any) => {
     const str = JSON.stringify(data, undefined, 4);
     console.log(str);
 
-
-    const ownCardHolder = $('.player0.hand .cardholder');
+    const isSpectating = data.isSpectating;
+    if (isSpectating) document.body.classList.add('spectating');
+    else document.body.classList.remove('spectating');
 
     /**
      * Translates an id sent by the server (from 0-3, where the own player could be any of the four) into an id used
-     * in the CSS (where 0 is bottom, 1 is left, 2 is top, 3 is right, and 0 is always the player himself)
+     * in the CSS (where 0 is bottom, 1 is left, 2 is top, 3 is right, and 0 is always the player itself)
      */
     function tplayer(pindex: number): number {
+        if (isSpectating) return pindex;
         const pcount = data.gameState.playerHandSizes.length;
         return ((pindex - data.ownid) % pcount + pcount) % pcount;
     }
@@ -145,7 +147,7 @@ socket.on('gameinfo', (data: any) => {
                 const playerName = 'player' + tplayer(cardp.player);
 
                 let existing = $('.card.' + fromTypeToClassCard(cardp.card).join('.'));
-                if (existing.length <= 0 && playerName !== 'player0') {
+                if (existing.length <= 0 && (isSpectating || playerName !== 'player0')) {
                     existing = $('.' + playerName + '.hand .card');
                 }
                 if (existing.length >= 1) {
@@ -189,41 +191,44 @@ socket.on('gameinfo', (data: any) => {
     }
 
 
+    if (!isSpectating) {
+        const ownCardHolder = $('.player0.hand .cardholder');
 
-    // Populate the player's own hand
-    const cardAngleDif = 172 / (data.hand.length + 1);
-    const cardAngleStart = -86 + cardAngleDif;
-    const ownCardArray = ownCardHolder.find('.card').toArray();
-    let oldCardIter = -1;
-    let lastCard;
-    for (let i = 0; i < data.hand.length; i++) {
-        let card: JQuery<HTMLElement> | undefined;
-        for (let j = oldCardIter + 1; j < ownCardArray.length; j++) {
-            if (fromTypeToClassCard(data.hand[i]).every(a => ownCardArray[j].classList.contains(a))) {
-                card = $(ownCardArray[j]) as JQuery<HTMLElement>;
-                card.addClass('unselectable');
-                card.off('click');
-                for (let k = oldCardIter + 1; k < j; k++) {
-                    (ownCardArray[k].parentNode as Node).removeChild(ownCardArray[k]);
+        // Populate the player's own hand
+        const cardAngleDif = 172 / (data.hand.length + 1);
+        const cardAngleStart = -86 + cardAngleDif;
+        const ownCardArray = ownCardHolder.find('.card').toArray();
+        let oldCardIter = -1;
+        let lastCard;
+        for (let i = 0; i < data.hand.length; i++) {
+            let card: JQuery<HTMLElement> | undefined;
+            for (let j = oldCardIter + 1; j < ownCardArray.length; j++) {
+                if (fromTypeToClassCard(data.hand[i]).every(a => ownCardArray[j].classList.contains(a))) {
+                    card = $(ownCardArray[j]) as JQuery<HTMLElement>;
+                    card.addClass('unselectable');
+                    card.off('click');
+                    for (let k = oldCardIter + 1; k < j; k++) {
+                        (ownCardArray[k].parentNode as Node).removeChild(ownCardArray[k]);
+                    }
+                    oldCardIter = j;
+                    break;
                 }
-                oldCardIter = j;
-                break;
             }
+
+            if (card === undefined) {
+                card = createCard(data.hand[i]);
+                if (lastCard === undefined) card.prependTo(ownCardHolder);
+                else card.insertAfter(lastCard);
+            }
+
+            const ang = cardAngleStart + i * cardAngleDif;
+            card.css('transform', 'rotate(' + ang + 'deg)');
+
+            lastCard = card;
         }
-
-        if (card === undefined) {
-            card = createCard(data.hand[i]);
-            if (lastCard === undefined) card.prependTo(ownCardHolder);
-            else card.insertAfter(lastCard);
+        for (let k = oldCardIter + 1; k < ownCardArray.length; k++) {
+            (ownCardArray[k].parentNode as Node).removeChild(ownCardArray[k]);
         }
-
-        const ang = cardAngleStart + i * cardAngleDif;
-        card.css('transform', 'rotate(' + ang + 'deg)');
-
-        lastCard = card;
-    }
-    for (let k = oldCardIter + 1; k < ownCardArray.length; k++) {
-        (ownCardArray[k].parentNode as Node).removeChild(ownCardArray[k]);
     }
 
 
@@ -233,7 +238,7 @@ socket.on('gameinfo', (data: any) => {
         const size = data.gameState.playerHandSizes[i];
         const cssplayer = tplayer(i);
         const cssplayerN = 'player' + cssplayer;
-        if (cssplayer === 0) continue;
+        if (!isSpectating && cssplayer === 0) continue;
 
         const cardholder = $('.' + cssplayerN + '.hand .cardholder');
         while (size < cardholder.find('.card').length) {
@@ -258,7 +263,7 @@ socket.on('gameinfo', (data: any) => {
 
 
     // Answer questions asked by the server
-    const entries: Array<[string, [string, any]]> = Object.entries(data.openQuestions);
+    const entries: [string, [string, any]][] = Object.entries(data.openQuestions);
     for (const openQuestion of entries) {
         const qid = openQuestion[0];
         const qtype = openQuestion[1][0];
@@ -319,7 +324,7 @@ function answerQuestion(qid: string, answer: any) {
 }
 
 function makeTrumpfButton(name: any) {
-    const serverStichOrderToCSS: Array<[any, string]> = [
+    const serverStichOrderToCSS: [any, string][] = [
         ["OBENABE", "obe"],
         ["UNNEUFFE", "une"],
         [["COLOR", 0], "schelle"],

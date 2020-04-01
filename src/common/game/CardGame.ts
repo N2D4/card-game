@@ -3,12 +3,20 @@ import Player from 'src/common/game/Player';
 import { range } from '../utils';
 
 export default abstract class CardGame<P extends Player<G>, C extends Card, G extends IGameState, U extends IGameState.IUpdate> {
-    public readonly players: P[];
+    public readonly players: readonly P[];
+    public readonly updateHandlers: ((state: G) => void)[];
     private readonly gameState: G;
 
     constructor(players: P[]) {
         this.players = players;
+        this.updateHandlers = this.players.map(p => ((state: G) => void p.sendGameState(state)));
         this.gameState = this.createGameState();
+        this.broadcastGameState();
+    }
+
+    public onUpdate(handler: (state: G) => void) {
+        this.updateHandlers.push(handler);
+        handler(this.gameState);
     }
 
     protected async allPlayers<T>(func: (player: P) => Promise<T>): Promise<T[]> {
@@ -22,9 +30,13 @@ export default abstract class CardGame<P extends Player<G>, C extends Card, G ex
     protected async broadcast(...messages: U[]): Promise<void> {
         for (const message of messages) {
             this.updateGameState(this.gameState, message);
-            for (const player of this.players) {
-                player.sendGameState(this.gameState);
-            }
+        }
+        this.broadcastGameState();
+    }
+    
+    private broadcastGameState() {
+        for (const handler of this.updateHandlers) {
+            handler(this.gameState);
         }
     }
 

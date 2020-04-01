@@ -1,8 +1,10 @@
 import {assertNonNull} from 'src/common/utils';
 
 export type LobbyState<P, G> = null | (
-    ({inGame: false, players: P[]} | {inGame: true, game: G})
-    & {lobby: Lobby<P, G>}
+    {lobby: Lobby<P, G>} & (
+        {inGame: false, players: P[]} |
+        {inGame: true, game: G}
+    )
 );
 
 export type LobbyType<P, G> = {

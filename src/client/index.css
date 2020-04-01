@@ -472,7 +472,7 @@ div {
 /**
  * If the user hovers over a card, move the underlying image up by 5%.
  */
-.player0.hand .card:not(.unselectable):hover > .cardimg {
+body:not(.spectating) .player0.hand .card:not(.unselectable):hover > .cardimg {
     transform: translate(0%, -5%);
 }
 

@@ -14,6 +14,7 @@ import Matchmaker, {LobbyState, LobbyType, Lobby} from './Matchmaker';
 import path from 'path';
 import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import {assertNonNull} from 'src/common/utils';
+import Serializer from 'src/common/serialize/Serializer';
 
 
 function createJassPlayer(socket: socketio.Socket): [JassPlayer, () => void] {
@@ -166,12 +167,20 @@ function startServer() {
                 return;
             }
 
-            const res = matchmaker.queuePlayer(socket, [lobby]);
-            if (res.length !== 1 || res[0] !== 'success') {
-                console.log(`Error joining lobby: ${JSON.stringify(res)}`);
-                socket.emit('lobby.error', 'cant-join-lobby', res[0]);
-                socket.disconnect();
-                return;
+            const lobbyState = matchmaker.getLobbyState(lobby);
+            if (lobbyState?.inGame) {
+                lobbyState.game.onUpdate((state) => socket.emit('gameinfo', Serializer.serialize({
+                    isSpectating: true,
+                    gameState: state,
+                })));
+            } else {
+                const res = matchmaker.queuePlayer(socket, [lobby]);
+                if (res.length !== 1 || res[0] !== 'success') {
+                    console.log(`Error joining lobby: ${JSON.stringify(res)}`);
+                    socket.emit('lobby.error', 'cant-join-lobby', res[0]);
+                    socket.disconnect();
+                    return;
+                }
             }
 
             console.log("Player joined successfully!", matchmaker.getInfo(s => s.id, g => g.constructor.name));

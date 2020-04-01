@@ -58,7 +58,4 @@ export default class JassStich {
         return this.cards.map(a => this.trumpf.getScore(a.card)).reduce((a, b) => a + b);
     }
 
-    
-
-
 }

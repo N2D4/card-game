@@ -103,6 +103,7 @@ export default class NetworkJassPlayer extends JassPlayer {
             throw new Error('Token not done generating! Please await .ensureToken() before calling .sendPacketNow()');
         }
         this.playerSocket.emit('gameinfo', Serializer.serialize({
+            isSpectating: false,
             ownid: this.index,
             hand: this.hand,
             gameState: this.curState,
