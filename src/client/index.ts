@@ -178,7 +178,6 @@ socket.on('gameinfo', (data: any) => {
                         break;
                     }
                 }
-                console.warn(stichContainer);
 
                 if (stichContainer === undefined) {
                     gestochen.remove();
@@ -187,7 +186,6 @@ socket.on('gameinfo', (data: any) => {
 
                 const newCard = createCard(type);
                 stichContainer.append(newCard);
-                console.warn(newCard);
                 animateCard(gestochen, newCard);
             }
         }
@@ -308,7 +306,7 @@ socket.on('gameinfo', (data: any) => {
             default:
                 alert("Unknown question type: " + qtype + ". Please contact the developer\n\nSee the console for more info");
                 // tslint:disable-next-line:no-console
-                console.warn("Unknown question type", openQuestion);
+                console.error("Unknown question type", openQuestion);
         }
     }
 
