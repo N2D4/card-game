@@ -41,28 +41,31 @@ $('.pop-up-window-container').hide();
 $('#lobby-container').show();
 
 const socket: SocketIOClient.Socket = socketio();
-const urlParams = new URLSearchParams(window.location.search);
-const lobbyId = urlParams.get('id');
-const playerName = urlParams.get('name') ?? 'Anonymous Player';
-const reconnectToken = localStorage.getItem('r7_reconnect_token');
-if (!reconnectToken) {
-    socket.emit('lobby.join', lobbyId, playerName);
-} else {
-    console.log(lobbyId);
-    socket.emit('lobby.can-reconnect', reconnectToken, lobbyId, (canReconnect: boolean) => {
-        if (canReconnect) {
-            socket.emit('lobby.reconnect', reconnectToken);
-        } else {
-            socket.emit('lobby.join', lobbyId, playerName);
-        }
-    });
-}
-const handledQuestions: Set<string> = new Set();
+(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const lobbyId = urlParams.get('id');
+    const requestedPlayerName = urlParams.get('name') ?? 'Anonymous Player';
+    const reconnectToken = localStorage.getItem('r7_reconnect_token');
+    if (!reconnectToken) {
+        socket.emit('lobby.join', lobbyId, requestedPlayerName);
+    } else {
+        console.log(lobbyId);
+        socket.emit('lobby.can-reconnect', reconnectToken, lobbyId, (canReconnect: boolean) => {
+            if (canReconnect) {
+                socket.emit('lobby.reconnect', reconnectToken);
+            } else {
+                socket.emit('lobby.join', lobbyId, requestedPlayerName);
+            }
+        });
+    }
 
-// start game if the button is clicked
-$('.lobby-startgame').click((e) => {
-    socket.emit('lobby.request-start-game', lobbyId);
-});
+    // start game if the button is clicked
+    $('.lobby-startgame').click((e) => {
+        socket.emit('lobby.request-start-game', lobbyId);
+    });
+})();
+
+const handledQuestions: Set<string> = new Set();
 
 // when the server tells us to reload
 socket.on('server.force-reload', () => {
