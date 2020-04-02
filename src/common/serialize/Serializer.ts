@@ -8,6 +8,9 @@ export default class Serializer {
             case "boolean":
                 return serializable;
             case "object":
+                if (serializable === null) {
+                    return null;
+                }
                 if (typeof serializable.serialize === "function") {
                     return Serializer.serialize(serializable.serialize());
                 }

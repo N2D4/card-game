@@ -10,7 +10,7 @@ export type LobbyState<P, G> = null | (
 export type LobbyType<P, G> = {
     readonly id: string,
     readonly maxPlayerCount: number,
-    readonly startGame: (onClose: () => void, ...p: P[]) => G;
+    readonly startGame: (lobby: Lobby<P, G>, onClose: () => void, ...p: P[]) => G;
 };
 
 export type Lobby<P, G> = {
@@ -91,13 +91,15 @@ export default class Matchmaker<P, G> {
         const playerSet = new Set(players);
 
         const lobbies: Set<Lobby<P, G>> = players.reduce(
-            (s, p) => this.players.get(p)?.forEach(l => s.add(l)) || s, new Set<Lobby<P, G>>()
+            (s, p) => (this.players.get(p)?.forEach(l => s.add(l)), s), new Set<Lobby<P, G>>()
         );
 
         lobbies.forEach(q => this.joinableLobbies.has(q) && this.joinableLobbies.set(
             q,
             (this.joinableLobbies.get(q) as P[]).filter(p => !playerSet.has(p))
         ));
+
+        lobbies.forEach(lobby => this.sendUpdateSoon(lobby));
 
         players.forEach(p => this.players.delete(p));
     }
@@ -122,7 +124,7 @@ export default class Matchmaker<P, G> {
         const onClose = lobby.autoRefresh ? ogOnClose : () => void (this.removeInGameLobby(lobby), ogOnClose());
 
         if (!lobby.autoRefresh) this.joinableLobbies.delete(lobby);
-        const game = lobby.type.startGame(onClose, ...players);
+        const game = lobby.type.startGame(lobby, onClose, ...players);
         if (!lobby.autoRefresh && !isClosed) this.inGameLobbies.set(lobby, game);
 
         this.unqueuePlayers(players);

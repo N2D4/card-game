@@ -41,16 +41,19 @@ $('.pop-up-window-container').hide();
 $('#lobby-container').show();
 
 const socket: SocketIOClient.Socket = socketio();
-const lobbyId = location.search.match(/id=([a-zA-Z0-9\-_]*)/)?.[1];
+const urlParams = new URLSearchParams(window.location.search);
+const lobbyId = urlParams.get('id');
+const playerName = urlParams.get('name') ?? 'Anonymous Player';
 const reconnectToken = localStorage.getItem('r7_reconnect_token');
 if (!reconnectToken) {
-    socket.emit('lobby.join', lobbyId);
+    socket.emit('lobby.join', lobbyId, playerName);
 } else {
-    socket.emit('lobby.can-reconnect', reconnectToken, (canReconnect: boolean) => {
+    console.log(lobbyId);
+    socket.emit('lobby.can-reconnect', reconnectToken, lobbyId, (canReconnect: boolean) => {
         if (canReconnect) {
             socket.emit('lobby.reconnect', reconnectToken);
         } else {
-            socket.emit('lobby.join', lobbyId);
+            socket.emit('lobby.join', lobbyId, playerName);
         }
     });
 }
@@ -59,6 +62,11 @@ const handledQuestions: Set<string> = new Set();
 // start game if the button is clicked
 $('.lobby-startgame').click((e) => {
     socket.emit('lobby.request-start-game', lobbyId);
+});
+
+// when the server tells us to reload
+socket.on('server.force-reload', () => {
+    location.reload(true);
 });
 
 // add a handler for lobby updates
@@ -115,28 +123,32 @@ socket.on('gameinfo', (data: any) => {
             green: 'rgba(0, 255, 0, 1)',
         };
 
-        const newTurnIndicator = tplayer(data.gameState.turnIndicator[0]);
+        let newTurnIndicator = tplayer(data.gameState.turnIndicator[0]);
         if (newTurnIndicator !== previousTurnIndicator) {
             if (previousTurnIndicator === undefined) previousTurnIndicator = newTurnIndicator;
             let dif = previousTurnIndicator - newTurnIndicator;
             dif = (dif % 4 + 6) % 4 - 2; // equivalent to: while (dif >= 2) dif -= 4; while (dif < -2) dif += 4;
-            if (dif === 2) dif = (previousTurnIndicatorDeltaWasNegative ? -1 : 1) * 2;
+            newTurnIndicator = previousTurnIndicator - dif;
 
-            const oldTransform = `rotate(${45 - 90 * previousTurnIndicator}deg) scale(1)`;
+            const oldTransform = `rotate(${45 - 90 * previousTurnIndicator}deg)`;
             const newTransform = `rotate(${45 - 90 * newTurnIndicator}deg)`
 
             $('.turnindicator').css('transform', 'background-color ease 0.3s');
             $('.turnindicator').css('transform', oldTransform);
+            console.log(dif, previousTurnIndicatorDeltaWasNegative);
+            console.log(oldTransform);
             forceReflow($('.turnindicator'));
             $('.turnindicator').css('transition', 'transform ease 0.5s, background-color ease 0.3s');
             $('.turnindicator').css('transform', newTransform);
+            forceReflow($('.turnindicator'));
+            console.log(newTransform);
 
             previousTurnIndicatorDeltaWasNegative = dif < 0;
         }
 
         $('.turnindicator').css('background-color', colors[data.gameState.turnIndicator[1] as 'yellow' | 'green']);
 
-        previousTurnIndicator = (newTurnIndicator % 4 + 4) % 4;
+        previousTurnIndicator = newTurnIndicator;
     }
     
 
@@ -279,7 +291,7 @@ socket.on('gameinfo', (data: any) => {
         namefield.text(data.gameState.playerNames[i]);
     }
 
-    // Populate the other player's hands
+    // Populate the other players' hands
     for (let i = 0; i < data.gameState.playerHandSizes.length; i++) {
         const size = data.gameState.playerHandSizes[i];
         const cssplayer = tplayer(i);
@@ -320,8 +332,8 @@ socket.on('gameinfo', (data: any) => {
         switch (qtype) {
             case 'guessScore':
                 $('#diff').show();
-                $('#diff-button').off('click');
-                $('#diff-button').click(() => {
+                $('.diff-go').off('click');
+                $('.diff-go').click(() => {
                     const v = $('#slider').val() as string;
                     answerQuestion(qid, v);
                     $('#diff').hide();
@@ -336,7 +348,7 @@ socket.on('gameinfo', (data: any) => {
                 break;
             case 'chooseTrumpf':
                 $("#trumpf-container").show();
-                $('#trumpf-window-buttons').empty();
+                $('.trumpf-go').empty();
 
                 for (let i = 0; i < qargs.length; i++) {
                     makeTrumpfButton(qargs[i]).click(() => {
@@ -437,7 +449,7 @@ function findTypeCard(type: [number, number]) {
 
 function animateCard(existing: JQuery, newCard: JQuery) {
     // Set starting point of animation
-    newCard.css('transition', '0s color');
+    newCard.css('transition', 'none');
     if (existing.length >= 1) {
         newCard.css('width', existing.css('width'));
         newCard.css('height', existing.css('height'));

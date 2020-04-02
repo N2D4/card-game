@@ -1,5 +1,3 @@
-// tslint:disable:no-console
-
 try {
     require('babel-polyfill');
 } catch (e) {
@@ -11,7 +9,3 @@ process.on('unhandledRejection', r => {
     console.error("Unhandled promise rejection!");
     console.error(r);
 });
-
-
-
-console.log("Tweaks loaded");

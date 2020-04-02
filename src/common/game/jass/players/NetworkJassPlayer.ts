@@ -2,7 +2,7 @@ import { JassCard } from "common/game/jass/JassCard";
 import JassStichOrder from "common/game/jass/JassStichOrder";
 import { JassWyys } from "common/game/jass/JassWyys";
 import Serializer from "common/serialize/Serializer";
-import { pseudoUUID, wait } from "common/utils";
+import { pseudoUUID, wait, wrapThrowing } from "common/utils";
 import ISerializable from "src/common/serialize/ISerializable";
 import JassPlayer from "./JassPlayer";
 import crypto from 'crypto';
@@ -32,7 +32,7 @@ export default class NetworkJassPlayer extends JassPlayer {
     private openQuestions: Map<QuestionID, [string, any]> = new Map();
     private questionResolvers: Map<QuestionID, (response: any) => void> = new Map();
 
-    public constructor(playerSocket: PlayerSocket) {
+    public constructor(playerSocket: PlayerSocket, public readonly playerName: string) {
         super();
         this.secretToken = (async () => {
             this.secretTokenValue = (await util.promisify(crypto.randomBytes)(32)).toString('base64');
@@ -52,14 +52,14 @@ export default class NetworkJassPlayer extends JassPlayer {
     }
 
     public getName(): string {
-        return "Player #" + this.index;
+        return this.playerName;
     }
 
     public setSocket(playerSocket: PlayerSocket) {
         if (this.playerSocket !== undefined) this.playerSocket.disconnect();
         this.playerSocket = playerSocket;
         this.sendPacket();
-        this.playerSocket.on('answer', (data) => {
+        this.playerSocket.on('answer', wrapThrowing((data) => {
             if (!Array.isArray(data) || data.length !== 2) throw new Error('Malformed input!');
 
             const qid = data[0];
@@ -70,7 +70,7 @@ export default class NetworkJassPlayer extends JassPlayer {
             }
 
             resolve(data[1]);
-        });
+        }));
     }
 
     private addQuestion(question: any, additionalMessage?: unknown): Promise<unknown> & {removeQuestion(): void} {

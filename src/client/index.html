@@ -34,7 +34,7 @@
                     <div id="jassmatborder">
                         <div id="jassmat">
                             <div id="matcardwrap"></div>
-                            <div class="turnindicator" style="display: hidden;"></div>
+                            <div class="turnindicator" style="color: transparent;"></div>
                         </div>
                     </div>
                 </div>
@@ -48,14 +48,6 @@
             </div>
         </div>
         <div class="player0 hand">
-            <div class="cardholderwrap">
-                <div class="cardholder"></div>
-            </div>
-            <div class="stiche"></div>
-            <div class="cardholderwrap">
-                <div class="cardholder"></div>
-            </div>
-            <div class="stiche"></div>
             <div class="cardholderwrap">
                 <div class="cardholder"></div>
             </div>
@@ -88,23 +80,25 @@
                     <div id="slider-value">40</div>
                     <input id="slider" type="range" min="0" max="157" step="1" value="40">
                 </div>
-                <div id="diff-button">Go!</div>
+                <div class="button diff-go">Go!</div>
             </div>
         </div>
 
         <div class="pop-up-window-container" id="trumpf-container">
             <div class="pop-up-window" id="trumpf-window">
                 Choose a trumpf!<br>
-                <div id="trumpf-window-buttons"></div>
+                <div class="button trumpf-go"></div>
             </div>
         </div>
 
         <div class="pop-up-window-container" id="lobby-container">
             <div class="pop-up-window" id="lobby-window">
+                <div class="info-field">
                 <span class="lobby-title">Loading...</span><br>
                 <span class="lobby-playercount">0</span> players waiting<br>
-                <button class="lobby-startgame">Start Game</button><br>
-                <button class="reload-page">Reload</button>
+                </div>
+                <div class="button lobby-startgame">Start Game</div><br>
+                <div class="button reload-page">Reload</div>
             </div>
         </div>
     </div>

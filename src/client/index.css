@@ -234,8 +234,12 @@ body {
 .pop-up-window {
     width: 85%;
     max-width: 600px;
-    background-color: pink;
+    background-color: #70A1D7;
     padding: 2%;
+
+    
+    border: 1.5vmin solid #FFFFFF;
+    border-radius: 5px;
 
     display: flex;
     flex-direction: column;
@@ -244,14 +248,42 @@ body {
 }
 
 /**
- * The button that closes the Differenzler window
- */
-#diff-button {
+* Styling for Button Elements
+*/
+
+.info-field {
     text-align: center;
-    padding-left: 40px;
-    padding-right: 40px;
-    background-color: green;
+    background-color: #70A1D7;
+    padding: 2%;
+
+    border: 1.5vmin solid #FFFFFF;
+    border-radius: 3px;
+
+    padding: 40px;
+    margin: 20 px;
 }
+
+.button {
+    border-radius: 3px;
+    background-color: #70A1D7;
+    border: 1.5vmin solid #FFFFFF;
+    color: white;
+    padding: 5px;
+    margin: 5px;
+    text-align: center;
+}
+/*
+.button.lobby-startgame {
+    background-color: #A1DE93;
+}
+
+.button.reload-page {
+    background-color: #F7F48B;
+}
+
+.button.diff-go {
+    background-color: #A1DE93;
+}*/
 
 /**
  * The button that displays the scoreboard.
@@ -513,7 +545,7 @@ body {
  * The cards should take the same width as .cardholder, rotate around a point 15% below their bottom center, and not
  * receive the ugly grey frame when tapped on iOS.
  */
-.hand .card {
+.hand > .cardholderwrap .card {
     position: absolute;
     transform-origin: 50% 115%;
     width: 100%;

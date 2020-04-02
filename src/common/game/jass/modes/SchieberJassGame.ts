@@ -125,7 +125,7 @@ export default class SchieberJassGame extends JassGame {
 
 
         // Create ranking
-        const ranking: Array<{score: number, players: JassPlayer[]}> = [];
+        const ranking: {score: number, players: JassPlayer[]}[] = [];
         ranking.push({score: trumpf.getScoreMultiplier() * (this.players[0].currentScore + this.players[2].currentScore), players: [this.players[0], this.players[2]]});
         ranking.push({score: trumpf.getScoreMultiplier() * (this.players[1].currentScore + this.players[3].currentScore), players: [this.players[1], this.players[3]]});
         ranking.sort((a, b) => a.score - b.score);

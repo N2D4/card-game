@@ -8,7 +8,7 @@ import JassGame from 'src/common/game/jass/JassGame';
 import DifferenzlerJassGame from 'src/common/game/jass/modes/DifferenzlerJassGame';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
-import {pseudoUUID} from 'src/common/utils';
+import {wrapThrowing, shuffle} from 'src/common/utils';
 import ExampleJassPlayer from './ExampleJassPlayer';
 import Matchmaker, {LobbyState, LobbyType, Lobby} from './Matchmaker';
 import path from 'path';
@@ -16,11 +16,16 @@ import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import {assertNonNull} from 'src/common/utils';
 import Serializer from 'src/common/serialize/Serializer';
 
+
+const lobbyIdForPlayer = new WeakMap<JassPlayer, string>();
+const playerNames = new WeakMap<socketio.Socket, string>();
+
 /**
  * Returns the player object and a function used to destroy it.
  */
-function createJassPlayer(socket: socketio.Socket): [JassPlayer, () => void] {
-    const player = new NetworkJassPlayer(socket);
+function createJassPlayer(socket: socketio.Socket, lobbyId: string): [JassPlayer, () => void] {
+    const player = new NetworkJassPlayer(socket, playerNames.get(socket) ?? 'player name');
+    lobbyIdForPlayer.set(player, lobbyId);
     return [player, () => void player.destroy()];
 }
 
@@ -28,9 +33,10 @@ function createLobbyType(id: string, maxPlayerCount: number, constructor: any) {
     return {
         id: id,
         maxPlayerCount: maxPlayerCount,
-        startGame: (onClose: () => void, ...players: socketio.Socket[]) => {
+        startGame: (lobby: Lobby<socketio.Socket, JassGame>, onClose: () => void, ...players: socketio.Socket[]) => {
             console.log("Starting game with players", ...players.map(s => s.id));
-            const arr = players.map(s => createJassPlayer(s));
+            const arr = players.map(s => createJassPlayer(s, lobby.id));
+            shuffle(arr);
             const botNames = ["Alexa Bot", "Cortana Bot", "Siri Bot", "Boomer Bot"];
             while (arr.length < 4) {
                 arr.push([new ExampleJassPlayer(botNames.shift() ?? "Unnamed Bot"), () => 0]);
@@ -138,13 +144,16 @@ function startServer() {
     const io: socketio.Server = socketio(server);
     
     io.on('connection', (socket) => {
-        socket.once('lobby.can-reconnect', (token, resp) => {
+        socket.on('lobby.can-reconnect', wrapThrowing((token, lobbyId, resp) => {
             if (typeof token !== 'string') throw new Error(`Token is not a string!`);
+            if (lobbyId !== null && typeof lobbyId !== 'string') throw new Error(`Lobby ID is not null or a string!`);
             if (typeof resp !== 'function') throw new Error(`Response callback is not a function!`);
-            resp(NetworkJassPlayer.fromToken(token) !== null);
-        });
 
-        socket.once('lobby.reconnect', (token) => {
+            const player = NetworkJassPlayer.fromToken(token);
+            resp(player !== null && (lobbyId === undefined || lobbyIdForPlayer.get(player) === lobbyId));
+        }));
+
+        socket.once('lobby.reconnect',  wrapThrowing((token) => {
             const player = NetworkJassPlayer.fromToken(token);
             if (player === null) {
                 socket.emit('lobby.error', 'unknown-reconnect-token');
@@ -152,11 +161,12 @@ function startServer() {
                 return;
             }
             player.setSocket(socket);
-        });
+        }));
 
-        socket.once('lobby.join', (data) => {
+        socket.once('lobby.join', wrapThrowing((data, name) => {
             if (!data) data = 'default';
-            if (typeof data !== 'string') throw new Error(`Not a string!`);
+            if (typeof data !== 'string') throw new Error(`Lobby id a string!`);
+            if (typeof name !== 'string') throw new Error(`Name not a string!`);
 
             console.log();
             console.log("Socket trying to join lobby " + data, socket.id);
@@ -183,12 +193,13 @@ function startServer() {
                     socket.disconnect();
                     return;
                 }
+                playerNames.set(socket, name);
             }
 
             console.log("Player joined successfully!", matchmaker.getInfo(s => s.id, g => g.constructor.name));
-        });
+        }));
     
-        socket.on('lobby.request-start-game', (data) => {
+        socket.on('lobby.request-start-game', wrapThrowing((data) => {
             if (!data) data = 'default';
             if (typeof data !== 'string') throw new Error(`Not a string!`);
             
@@ -207,11 +218,11 @@ function startServer() {
 
             console.log(`Socket trying to start lobby ${data}`);
             matchmaker.startGame(lobby);
-        });
+        }));
 
-        socket.on('disconnect', () => {
+        socket.on('disconnect', wrapThrowing(() => {
             matchmaker.unqueuePlayer(socket);
-        });
+        }));
 
         console.log();
         console.log("Socket connected", socket.id);

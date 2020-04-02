@@ -2,8 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import {Lobby, LobbyState} from 'src/server/Matchmaker';
 
 function createURLIDFromID(id: string): string {
-    if (id.match(/^[a-zA-Z0-9\-_]*$/)) return 'tg-' + id;
-    return 'tgb-' + btoa(id);
+    return 'tg-' + encodeURIComponent(id);
 }
 
 export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any, any>) => void) => Lobby<any, any> | null) {
@@ -71,7 +70,7 @@ export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any, 
         if (callbackQuery.inline_message_id === undefined) throw new Error('callbackQuery.inline_message_id is undefined!');
 
         bot.answerCallbackQuery(callbackQuery.id, {
-            url: gameURL + '?id=' + createURLIDFromID(callbackQuery.inline_message_id)
+            url: gameURL + '?id=' + createURLIDFromID(callbackQuery.inline_message_id) + '&name=' + encodeURIComponent(callbackQuery.from.first_name)
         });
     });
 }

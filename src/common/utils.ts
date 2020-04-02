@@ -1,3 +1,15 @@
+export function wrapThrowing<U extends unknown[], V>(f: (...args: U) => V | never): ((...args: U) => V | {error: unknown}) {
+    return (...args: U) => {
+        try {
+            return f(...args);
+        } catch (e) {
+            console.error(`Error occured in function passed to wrapThrowing!`);
+            console.error(e);
+            return e;
+        }
+    };
+}
+
 export function assertNonNull<T>(t: T | undefined | null): T {
     if (t === null || t === undefined) throw new Error(`Assertion error: t=${t} is null or undefined`);
     return t;
