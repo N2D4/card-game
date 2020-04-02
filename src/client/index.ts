@@ -1,5 +1,5 @@
 import 'common/tweaks.ts';
-import { deepEquals, range, sanitize } from 'common/utils.ts';
+import { deepEquals, range, sanitize, random, throwExp } from 'common/utils.ts';
 import $ from 'jquery';
 import socketio from 'socket.io-client';
 
@@ -146,47 +146,50 @@ socket.on('gameinfo', (data: any) => {
                 const card = createCard(cardp.card);
                 const playerName = 'player' + tplayer(cardp.player);
 
-                let existing = $('.card.' + fromTypeToClassCard(cardp.card).join('.'));
+                let existing = findTypeCard(cardp.card);
                 if (existing.length <= 0 && (isSpectating || playerName !== 'player0')) {
-                    existing = $('.' + playerName + '.hand .card');
+                    existing = randomElement($('.' + playerName + '.hand .card'));
                 }
-                if (existing.length >= 1) {
-                    existing = $(existing[Math.floor(Math.random() * existing.length)]);
-                    if (tagged.find(p => p.is(existing)) !== undefined) {
-                        tagged = tagged.filter(p => !p.is(existing));
-                        continue;
-                    }
+
+                if (tagged.find(p => p.is(existing)) !== undefined) {
+                    tagged = tagged.filter(p => !p.is(existing));
+                    continue;
                 }
 
 
                 card.addClass(playerName);
                 jassmatHolder.append(card);
 
+                animateCard(existing, card);
+            }
 
-                // Set starting point of animation
-                card.css('transition', '0s color');
-                if (existing.length >= 1) {
-                    card.css('width', existing.css('width'));
-                    card.css('height', existing.css('height'));
-                    card.css('transform', existing.css('transform'));
-                    card.css('transform-origin', '50% 0%');
-                    card.offset(existing.offset() as {top: number, left: number});
-                    existing.remove();
+            for (const gestochen of tagged) {
+                const classCard = getClassCard(gestochen);
+                const type = fromClassCardToType(classCard);
+
+                let stichContainer: JQuery | undefined;
+                let hasFound = false;
+                for (const message of data.gameState.messages) {
+                    if (!hasFound && message[0] === 'playcard' && deepEquals(message[1], type)) {
+                        hasFound = true;
+                    }
+                    if (hasFound && message[0] === 'stichwinner') {
+                        stichContainer = $('.hand.player' + tplayer(message[1]) + ' > .stiche');
+                        break;
+                    }
+                }
+                console.warn(stichContainer);
+
+                if (stichContainer === undefined) {
+                    gestochen.remove();
+                    continue;
                 }
 
-                // Make sure our transition changes went through
-                forceReflow(card);
-
-                // Do the animation
-                card.css('transition', '');
-                card.css('width', '');
-                card.css('height', '');
-                card.css('left', '');
-                card.css('top', '');
-                card.css('transform', '');
-                card.css('transform-origin', '');
+                const newCard = createCard(type);
+                stichContainer.append(newCard);
+                console.warn(newCard);
+                animateCard(gestochen, newCard);
             }
-            tagged.forEach(p => $(p).remove());
         }
     }
 
@@ -342,14 +345,23 @@ function makeTrumpfButton(name: any) {
     return res;
 }
 
+const cardTypes = ['schelle', 'roesle', 'schilte', 'eichel'];
+const cardNums = ['', '', '', '', '', '', 'sechs', 'sieben', 'acht', 'neun', 'zehn', 'under', 'ober', 'koenig', 'ass'];
 /**
  * Translates a pair of numbers as received by the server into strings
  */
 function fromTypeToClassCard(type: [number, number]): [string, string] {
-    const cardTypes = ['schelle', 'roesle', 'schilte', 'eichel'];
-    const cardNums = ['', '', '', '', '', '', 'sechs', 'sieben', 'acht', 'neun', 'zehn', 'under', 'ober', 'koenig', 'ass'];
-
     return [cardTypes[type[0]], cardNums[type[1]]];
+}
+
+function fromClassCardToType(clss: [string, string]): [number, number] {
+    return [cardTypes.indexOf(clss[0]), cardNums.indexOf(clss[1])];
+}
+
+function getClassCard(obj: JQuery): [string, string] {
+    const classList = [...obj[0].classList];
+    const cl = (arr: string[]) => classList.find(a => a !== '' && arr.includes(a)) ?? throwExp(new Error('Object not a class card!'));
+    return [cl(cardTypes), cl(cardNums)];
 }
 
 /**
@@ -370,6 +382,39 @@ function createCard(type?: [number, number]): JQuery<HTMLElement> {
     card.append(cardimg);
 
     return card;
+}
+
+function randomElement(obj: JQuery) {
+    return obj.length === 0 ? obj : $(random(obj.toArray()));
+}
+
+function findTypeCard(type: [number, number]) {
+    return randomElement($('.card.' + fromTypeToClassCard(type).join('.')));
+}
+
+function animateCard(existing: JQuery, newCard: JQuery) {
+    // Set starting point of animation
+    newCard.css('transition', '0s color');
+    if (existing.length >= 1) {
+        newCard.css('width', existing.css('width'));
+        newCard.css('height', existing.css('height'));
+        newCard.css('transform', existing.css('transform'));
+        newCard.css('transform-origin', '50% 0%');
+        newCard.offset(existing.offset() as {top: number, left: number});
+        existing.remove();
+    }
+
+    // Make sure our transition changes went through
+    forceReflow(newCard);
+
+    // Do the animation
+    newCard.css('transition', '');
+    newCard.css('width', '');
+    newCard.css('height', '');
+    newCard.css('left', '');
+    newCard.css('top', '');
+    newCard.css('transform', '');
+    newCard.css('transform-origin', '');
 }
 
 function updateScore(sc: number[], gs: number[], playerNames: string[]) {

@@ -39,10 +39,14 @@ export default class DifferenzlerJassGame extends JassGame {
             const stich = new JassStich(trumpf);
 
             this.broadcast("startstich");
+
             for (let j = 0; j < this.players.length; j++) {
                 // Broadcast the stich
                 this.broadcast(["stichinfo", stich]);
 
+                // Wait for animations
+                await wait(500);
+                
                 // Select player
                 const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
 
@@ -58,9 +62,6 @@ export default class DifferenzlerJassGame extends JassGame {
 
                 // Send a broadcast signal so that game state is updated on all clients
                 this.broadcast(["playcard", played]);
-
-                // Wait for animations
-                await wait(500);
             }
             lastWinner = stich.getWinner();
             const scorePlus = stich.getScore();

@@ -48,10 +48,16 @@ export default class SchieberJassGame extends JassGame {
         for (let i = 0; i < numberOfRounds; i++) {
             // Create and broadcast the Stich object
             const stich = new JassStich(trumpf);
+
             this.broadcast("startstich");
 
             for (let j = 0; j < this.players.length; j++) {
+                // Broadcast the stich
                 this.broadcast(["stichinfo", stich]);
+
+                // Wait for animations
+                await wait(500);
+
                 // Select player
                 const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
 
@@ -86,9 +92,6 @@ export default class SchieberJassGame extends JassGame {
                 // Send a broadcast signal so that game state is updated on all clients
                 // We've already broadcasted the same stich object so don't need to do that again
                 this.broadcast(["playcard", played]);
-
-                // Wait for animations
-                await wait(500);
             }
 
             // add scores to team with better wyys

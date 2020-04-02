@@ -174,7 +174,6 @@ div {
     background: #d3d3d3;
     outline: none;
     opacity: 1;
-    -webkit-transition: .2s;
     transition: opacity .2s;
 }
   
@@ -388,7 +387,7 @@ div {
 /**
  * Cards in any hand should have z-index 1
  */
-.hand .card {
+.hand > :not(.stiche) .card {
     z-index: 1;
 }
 
@@ -410,6 +409,32 @@ div {
 .player0.hand {
     width: 100%;
     height: 100%;
+}
+
+/**
+ * The stiche container should be absolutely positioned beyond the screen, in the middle.
+ */
+.hand > .stiche {
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+.player0.hand > .stiche { top: 150vh; left: 50vw; }
+.player1.hand > .stiche { top: 50vh; left: 150vw; }
+.player2.hand > .stiche { top: -50vh; left: 50vw; }
+.player3.hand > .stiche { top: 50vh; left: -50vw; }
+
+/**
+ * Cards inside the stiche container should have 0 width, 0 height.
+ */
+.hand > .stiche > .card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: none;
+    width: 0;
+    height: 0;
+    transition: 0.6s ease left, 0.6s ease top, 0.6s ease transform, 0.6s ease transform-origin, 0.6s ease width, 0.6s ease height;
 }
 
 /**

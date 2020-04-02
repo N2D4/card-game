@@ -8,7 +8,7 @@ import JassStich from './JassStich';
 
 export type JassGameEvent = [string, ISerializable] | string;
 export interface IJassGameState {
-    stich: JassStich;
+    stich: JassStich | undefined;
     messages: ISerializable[];
     playerHandSizes: number[];
     playerNames: string[];
@@ -34,7 +34,7 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
 
     protected createGameState(): IJassGameState {
         return {
-            stich: [][0],
+            stich: undefined,
             messages: [],
             playerHandSizes: this.players.map(() => 0),
             playerNames: this.players.map(p => p.getName()),

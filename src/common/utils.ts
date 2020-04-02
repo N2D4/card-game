@@ -3,6 +3,10 @@ export function assertNonNull<T>(t: T | undefined | null): T {
     return t;
 }
 
+export function throwExp(error: unknown): never {
+    throw error;
+}
+
 export function* range(fromInclusive: number, toExclusive?: number) {
     if (toExclusive === undefined) {
         toExclusive = fromInclusive;

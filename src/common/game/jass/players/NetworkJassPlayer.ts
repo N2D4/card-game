@@ -75,7 +75,6 @@ export default class NetworkJassPlayer extends JassPlayer {
 
     private addQuestion(question: any, additionalMessage?: unknown): Promise<unknown> & {removeQuestion(): void} {
         const qid = String(this.questionsAsked++);
-        console.log('question', qid, question);
         this.openQuestions.set(qid, question);
         const promise: any = new Promise(resolve => {
             this.questionResolvers.set(qid, (a) => {
@@ -150,7 +149,6 @@ export default class NetworkJassPlayer extends JassPlayer {
             const a = await questionPromise;
             try {
                 const t = convertFunc(a);
-                console.warn('t', t, a);
                 if (acceptFunc(t)) return t;
             } catch (e) {
                 console.error('error accepting request', e);
