@@ -392,7 +392,7 @@ div {
 }
 
 /**
- * A player hand. Flexbox containing .cardholderwrap (centered horizontally and vertically)
+ * A player hand. Flexbox containing .cardholderwrap and .stiche (both centered horizontally and vertically)
  */
 .hand {
     position: relative;
@@ -412,17 +412,18 @@ div {
 }
 
 /**
- * The stiche container should be absolutely positioned beyond the screen, in the middle.
+ * The stiche container should be positioned beyond the screen in one coordinate, and its other coordinate is centered
+ * (see .hand)
  */
 .hand > .stiche {
-    position: absolute;
+    position: fixed;
     width: 0;
     height: 0;
 }
-.player0.hand > .stiche { top: 150vh; left: 50vw; }
-.player1.hand > .stiche { top: 50vh; left: 150vw; }
-.player2.hand > .stiche { top: -50vh; left: 50vw; }
-.player3.hand > .stiche { top: 50vh; left: -50vw; }
+.player0.hand > .stiche { top: 150vh; }
+.player1.hand > .stiche { left: 150vw; }
+.player2.hand > .stiche { top: -50vh; }
+.player3.hand > .stiche { left: -50vw; }
 
 /**
  * Cards inside the stiche container should have 0 width, 0 height.
