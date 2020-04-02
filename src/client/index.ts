@@ -399,7 +399,7 @@ function animateCard(existing: JQuery, newCard: JQuery) {
         newCard.css('width', existing.css('width'));
         newCard.css('height', existing.css('height'));
         newCard.css('transform', existing.css('transform'));
-        newCard.css('transform-origin', '50% 0%');
+        newCard.css('transform-origin', existing.css('transform-origin'));
         newCard.offset(existing.offset() as {top: number, left: number});
         existing.remove();
     }
