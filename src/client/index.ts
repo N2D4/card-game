@@ -1,5 +1,5 @@
 import 'common/tweaks.ts';
-import { deepEquals, range, sanitize, random, throwExp } from 'common/utils.ts';
+import { deepEquals, range, sanitize, random, throwExp, INCREMENTAL_VERSION } from 'common/utils.ts';
 import $ from 'jquery';
 import socketio from 'socket.io-client';
 
@@ -67,7 +67,8 @@ const socket: SocketIOClient.Socket = socketio();
 
 const handledQuestions: Set<string> = new Set();
 
-// when the server tells us to reload
+// versioning
+socket.emit('server.check-version', INCREMENTAL_VERSION);
 socket.on('server.force-reload', () => {
     location.reload(true);
 });

@@ -1,3 +1,5 @@
+export const INCREMENTAL_VERSION = 5;
+
 export function wrapThrowing<U extends unknown[], V>(f: (...args: U) => V | never): ((...args: U) => V | {error: unknown}) {
     return (...args: U) => {
         try {

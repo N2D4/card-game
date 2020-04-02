@@ -8,7 +8,7 @@ import JassGame from 'src/common/game/jass/JassGame';
 import DifferenzlerJassGame from 'src/common/game/jass/modes/DifferenzlerJassGame';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
-import {wrapThrowing, shuffle} from 'src/common/utils';
+import {wrapThrowing, shuffle, INCREMENTAL_VERSION} from 'src/common/utils';
 import ExampleJassPlayer from './ExampleJassPlayer';
 import Matchmaker, {LobbyState, LobbyType, Lobby} from './Matchmaker';
 import path from 'path';
@@ -144,6 +144,10 @@ function startServer() {
     const io: socketio.Server = socketio(server);
     
     io.on('connection', (socket) => {
+        socket.on('server.check-version', wrapThrowing((version) => {
+            if (version !== INCREMENTAL_VERSION) socket.emit('server.force-reload');
+        }));
+
         socket.on('lobby.can-reconnect', wrapThrowing((token, lobbyId, resp) => {
             if (typeof token !== 'string') throw new Error(`Token is not a string!`);
             if (lobbyId !== null && typeof lobbyId !== 'string') throw new Error(`Lobby ID is not null or a string!`);
@@ -166,7 +170,10 @@ function startServer() {
         socket.once('lobby.join', wrapThrowing((data, name) => {
             if (!data) data = 'default';
             if (typeof data !== 'string') throw new Error(`Lobby id a string!`);
-            if (typeof name !== 'string') throw new Error(`Name not a string!`);
+            if (typeof name !== 'string') {
+                socket.emit('server.force-reload');
+                throw new Error(`Name not a string!`);
+            }
 
             console.log();
             console.log("Socket trying to join lobby " + data, socket.id);
