@@ -12,6 +12,7 @@ export interface IJassGameState {
     messages: ISerializable[];
     playerHandSizes: number[];
     playerNames: string[];
+    turnIndicator: [number, 'green' | 'yellow'] | undefined;
 }
 
 export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJassGameState, JassGameEvent> {
@@ -38,12 +39,15 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
             messages: [],
             playerHandSizes: this.players.map(() => 0),
             playerNames: this.players.map(p => p.getName()),
+            turnIndicator: undefined,
         };
     }
 
     protected updateGameState(gameState: IJassGameState, message: JassGameEvent) {
         if (Array.isArray(message) && message[0] === "stichinfo") {
             gameState.stich = message[1];
+        } else if (Array.isArray(message) && message[0] === "turnindicator") {
+            gameState.turnIndicator = message[1];
         } else {
             gameState.messages.push(Serializer.serialize(message));
         }

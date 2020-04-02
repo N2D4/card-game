@@ -5,6 +5,9 @@ import socketio from 'socket.io-client';
 
 const _JASS_IS_DEBUG = false;
 
+let previousTurnIndicator: number | undefined;
+let previousTurnIndicatorDeltaWasNegative = false;
+
 (window as unknown as {jQuery: any}).jQuery = $;
 
 // Add touch start event listener for iOS; this allows :hover CSS selector to do its job
@@ -76,7 +79,6 @@ socket.on('gameinfo', (data: any) => {
     $('#lobby-container').hide();
 
     const str = JSON.stringify(data, undefined, 4);
-    console.log(str);
 
     const isSpectating = data.isSpectating;
     if (isSpectating) document.body.classList.add('spectating');
@@ -102,6 +104,41 @@ socket.on('gameinfo', (data: any) => {
         }
         return res;
     }
+
+    // Update turn indicator
+    if (data.gameState.turnIndicator === undefined) {
+        $('.turnindicator').css('background-color', 'transparent');
+        previousTurnIndicator = undefined;
+    } else {
+        const colors = {
+            yellow: 'rgb(255, 187, 0)',
+            green: 'rgba(0, 255, 0, 1)',
+        };
+
+        const newTurnIndicator = tplayer(data.gameState.turnIndicator[0]);
+        if (newTurnIndicator !== previousTurnIndicator) {
+            if (previousTurnIndicator === undefined) previousTurnIndicator = newTurnIndicator;
+            let dif = previousTurnIndicator - newTurnIndicator;
+            dif = (dif % 4 + 6) % 4 - 2; // equivalent to: while (dif >= 2) dif -= 4; while (dif < -2) dif += 4;
+            if (dif === 2) dif = (previousTurnIndicatorDeltaWasNegative ? -1 : 1) * 2;
+
+            const oldTransform = `rotate(${45 - 90 * previousTurnIndicator}deg) scale(1)`;
+            const newTransform = `rotate(${45 - 90 * newTurnIndicator}deg)`
+
+            $('.turnindicator').css('transform', 'background-color ease 0.3s');
+            $('.turnindicator').css('transform', oldTransform);
+            forceReflow($('.turnindicator'));
+            $('.turnindicator').css('transition', 'transform ease 0.5s, background-color ease 0.3s');
+            $('.turnindicator').css('transform', newTransform);
+
+            previousTurnIndicatorDeltaWasNegative = dif < 0;
+        }
+
+        $('.turnindicator').css('background-color', colors[data.gameState.turnIndicator[1] as 'yellow' | 'green']);
+
+        previousTurnIndicator = (newTurnIndicator % 4 + 4) % 4;
+    }
+    
 
     if (data.gameState !== undefined) {
 
@@ -232,7 +269,15 @@ socket.on('gameinfo', (data: any) => {
         }
     }
 
+    // set namefield of other players
+    for (let i = 0; i < data.gameState.playerNames.length; i++) {
+        const cssplayer = tplayer(i);
+        const cssplayerN = 'player' + cssplayer;
+        if(!isSpectating && cssplayer === 0) continue;
 
+        const namefield = $('.' + cssplayerN + '.hand .namefield');
+        namefield.text(data.gameState.playerNames[i]);
+    }
 
     // Populate the other player's hands
     for (let i = 0; i < data.gameState.playerHandSizes.length; i++) {

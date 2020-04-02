@@ -4,7 +4,7 @@ import { JassCard } from 'common/game/jass/JassCard';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
 import {JassWyys, JassWyysType} from 'src/common/game/jass/JassWyys';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
-import { random } from 'src/common/utils';
+import { random, wait } from 'src/common/utils';
 import util from 'util';
 
 const log = /*console.log*/ (a?: any) => {};
@@ -20,6 +20,7 @@ export default class ExampleJassPlayer extends JassPlayer {
     }
 
     public async chooseCard(choices: JassCard[]): Promise<JassCard> {
+        await wait(500);
         log();
         log("==== " + this.name + " ====");
         log("Choosing card...");
@@ -31,10 +32,12 @@ export default class ExampleJassPlayer extends JassPlayer {
     }
 
     public async chooseToWyys(options: JassWyys[]): Promise<boolean> {
+        await wait(500);
         return true;
     }
     
     public async askForScore(rangeMin: number, rangeMax: number): Promise<number> {
+        await wait(500);
         log();
         log("==== " + this.name + " ====");
         log("Guessing score...");
@@ -45,6 +48,7 @@ export default class ExampleJassPlayer extends JassPlayer {
     }
 
     public async chooseStichOrder<G, T extends (JassStichOrder | G)>(choices: T[]): Promise<T> {
+        await wait(500);
         log();
         log("==== " + this.name + " ====");
         log("Choosing stich order...");

@@ -3,7 +3,7 @@ import Player from 'src/common/game/Player';
 import { range } from '../utils';
 
 export default abstract class CardGame<P extends Player<G>, C extends Card, G extends IGameState, U extends IGameState.IUpdate> {
-    public readonly players: readonly P[];
+    public readonly players: P[];
     public readonly updateHandlers: ((state: G) => void)[];
     private readonly gameState: G;
 

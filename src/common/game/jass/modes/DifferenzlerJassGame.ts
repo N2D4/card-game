@@ -41,33 +41,42 @@ export default class DifferenzlerJassGame extends JassGame {
             this.broadcast("startstich");
 
             for (let j = 0; j < this.players.length; j++) {
+                const curPlayerIndex = (lastWinner.index + j) % this.players.length;
+
+                // Broadcast the player info
+                this.broadcast(["turnindicator", [curPlayerIndex, 'yellow']]);
+
                 // Broadcast the stich
                 this.broadcast(["stichinfo", stich]);
-
-                // Wait for animations
-                await wait(500);
                 
                 // Select player
-                const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
+                const player: JassPlayer = this.players[curPlayerIndex];
 
                 // Find playable cards
                 const playable = player.hand.getPlayable(stich, true);
 
-                // Ask the player which card to play
-                const played: JassCard = await player.chooseCard(playable);
-                
-                // Remove the card from the hand and add it to the stich
-                player.hand.remove(played);
-                stich.add(player, played);
+                // If the player plays faster than 500ms, give the animations some time to breathe
+                await Promise.all([
+                    wait(500),
+                    (async () => {
+                        // Ask the player which card to play
+                        const played: JassCard = await player.chooseCard(playable);
 
-                // Send a broadcast signal so that game state is updated on all clients
-                this.broadcast(["playcard", played]);
+                        // Remove the card from the hand and add it to the stich
+                        player.hand.remove(played);
+                        stich.add(player, played);
+
+                        // Send a broadcast signal so that game state is updated on all clients
+                        this.broadcast(["playcard", played]);
+                    })()
+                ]);
             }
             lastWinner = stich.getWinner();
             const scorePlus = stich.getScore();
             lastWinner.currentScore += scorePlus;
             this.broadcast(["stichwinner", lastWinner]);
             this.broadcast(["scoreplus", [scorePlus, lastWinner]]);
+            this.broadcast(["turnindicator", [lastWinner.index, 'green']]);
 
             // Wait for animations
             await wait(1500);

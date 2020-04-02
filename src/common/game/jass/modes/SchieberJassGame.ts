@@ -23,12 +23,15 @@ export default class SchieberJassGame extends JassGame {
         // Choose Trumpf
         const order: (JassStichOrder | "schieb")[] = [...JassStichOrder.getSchieberStichOrder()];
         order.push("schieb");
+        this.broadcast(["curturn", this.startingPlayer.index]);
         let trumpf: (JassStichOrder | "schieb") = await this.startingPlayer.chooseStichOrder(order);
         this.broadcast(["trumpf", trumpf]);
 
         // if first player chose schieb, player 2 selects new trumpf
         if (trumpf === "schieb") {
-            trumpf = await this.players[(this.startingPlayer.index + 2) % this.players.length].chooseStichOrder(JassStichOrder.getSchieberStichOrder());
+            const nextPlayerIndex = (this.startingPlayer.index + 2) % this.players.length;
+            this.broadcast(["curturn", nextPlayerIndex]);
+            trumpf = await this.players[nextPlayerIndex].chooseStichOrder(JassStichOrder.getSchieberStichOrder());
             this.broadcast(["trumpf", trumpf]);
         }
 
@@ -52,6 +55,11 @@ export default class SchieberJassGame extends JassGame {
             this.broadcast("startstich");
 
             for (let j = 0; j < this.players.length; j++) {
+                const curPlayerIndex = (lastWinner.index + j) % this.players.length;
+
+                // Broadcast the player info
+                this.broadcast(["turnindicator", [curPlayerIndex, 'yellow']]);
+
                 // Broadcast the stich
                 this.broadcast(["stichinfo", stich]);
 
@@ -59,7 +67,7 @@ export default class SchieberJassGame extends JassGame {
                 await wait(500);
 
                 // Select player
-                const player: JassPlayer = this.players[(lastWinner.index + j) % this.players.length];
+                const player: JassPlayer = this.players[curPlayerIndex];
 
                 // ask players if they want to wyys if its turn 1
                 if (i === 0) {
@@ -105,6 +113,7 @@ export default class SchieberJassGame extends JassGame {
             lastWinner.currentScore += scorePlus;
             this.broadcast(["stichwinner", lastWinner]);
             this.broadcast(["scoreplus", [scorePlus, lastWinner]]);
+            this.broadcast(["turnindicator", [lastWinner.index, 'green']]);
 
             // Wait for animations
             await wait(1500);

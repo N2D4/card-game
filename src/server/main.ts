@@ -16,23 +16,25 @@ import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import {assertNonNull} from 'src/common/utils';
 import Serializer from 'src/common/serialize/Serializer';
 
-
+/**
+ * Returns the player object and a function used to destroy it.
+ */
 function createJassPlayer(socket: socketio.Socket): [JassPlayer, () => void] {
     const player = new NetworkJassPlayer(socket);
     return [player, () => void player.destroy()];
 }
 
-function createLobbyType(id: string, maxPlayerCount: number, constructor: unknown) {
+function createLobbyType(id: string, maxPlayerCount: number, constructor: any) {
     return {
         id: id,
         maxPlayerCount: maxPlayerCount,
         startGame: (onClose: () => void, ...players: socketio.Socket[]) => {
             console.log("Starting game with players", ...players.map(s => s.id));
             const arr = players.map(s => createJassPlayer(s));
+            const botNames = ["Alexa Bot", "Cortana Bot", "Siri Bot", "Boomer Bot"];
             while (arr.length < 4) {
-                arr.push([new ExampleJassPlayer(pseudoUUID()), () => 0]);
+                arr.push([new ExampleJassPlayer(botNames.shift() ?? "Unnamed Bot"), () => 0]);
             }
-            // @ts-ignore
             const game = new constructor(arr[0][0], arr[1][0], arr[2][0], arr[3][0]);
             game.playRound().then(() => {
                 onClose();
@@ -205,6 +207,10 @@ function startServer() {
 
             console.log(`Socket trying to start lobby ${data}`);
             matchmaker.startGame(lobby);
+        });
+
+        socket.on('disconnect', () => {
+            matchmaker.unqueuePlayer(socket);
         });
 
         console.log();
