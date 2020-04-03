@@ -50,16 +50,19 @@ export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any, 
         if (inlineResult.inline_message_id === undefined) throw new Error('inlineResult.inline_message_id is undefined!');
 
         const id = createURLIDFromID(inlineResult.inline_message_id);
+        let lastCaption: string | undefined;
         const lobby = createLobby(id, (o) => {
             const caption = o === null             ? `Game has ended`
                           : o.inGame               ? `In-Game`
                           : o.players.length === 0 ? `Play`
                           :                          `${o.players.length} player${o.players.length === 1 ? '' : 's'} waiting!`;
+            if (caption === lastCaption) return;     // prevent spam on Telegram servers
 
             bot.editMessageReplyMarkup(
                 {inline_keyboard: [[{text: caption, callback_game: {}}]]},
                 {inline_message_id: inlineResult.inline_message_id}
             );
+            lastCaption = caption;
         });
         if (lobby === null) throw new Error(`Can't create lobby with ID ${id} - does it already exist?`);
     });

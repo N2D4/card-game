@@ -8,7 +8,7 @@ const _JASS_IS_DEBUG = false;
 let previousTurnIndicator: number | undefined;
 let previousTurnIndicatorDeltaWasNegative = false;
 
-(window as unknown as {jQuery: any}).jQuery = $;
+(window as any).jQuery = $;
 
 // Add touch start event listener for iOS; this allows :hover CSS selector to do its job
 document.addEventListener("touchstart", () => {}, true);
@@ -43,25 +43,27 @@ $('#lobby-container').show();
 const socket: SocketIOClient.Socket = socketio();
 (() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const lobbyId = urlParams.get('id');
+    const requestedLobbyId = urlParams.get('id');
     const requestedPlayerName = urlParams.get('name') ?? 'Anonymous Player';
     const reconnectToken = localStorage.getItem('r7_reconnect_token');
+
     if (!reconnectToken) {
-        socket.emit('lobby.join', lobbyId, requestedPlayerName);
+        socket.emit('lobby.join', requestedLobbyId, requestedPlayerName);
     } else {
-        console.log(lobbyId);
-        socket.emit('lobby.can-reconnect', reconnectToken, lobbyId, (canReconnect: boolean) => {
+        socket.emit('lobby.can-reconnect', reconnectToken, requestedLobbyId, (canReconnect: boolean) => {
             if (canReconnect) {
                 socket.emit('lobby.reconnect', reconnectToken);
             } else {
-                socket.emit('lobby.join', lobbyId, requestedPlayerName);
+                socket.emit('lobby.join', requestedLobbyId, requestedPlayerName);
             }
         });
     }
 
     // start game if the button is clicked
-    $('.lobby-startgame').click((e) => {
-        socket.emit('lobby.request-start-game', lobbyId);
+    $('.lobby-startgame').click(() => {
+        socket.emit('lobby.get-lobby-ids', (lobbyIds: string[]) => {
+            socket.emit('lobby.request-start-game', lobbyIds[0]);
+        });
     });
 })();
 
@@ -84,10 +86,13 @@ socket.on('lobby.error', (errtype: string, data: any) => {
     alert(`Unhandled lobby error! More info in the console.\n\n${errtype}: ${JSON.stringify(data)}`);
 });
 
+// add a handler for token updates
+socket.on('server.reconnect-token', (token: string) => {
+    localStorage.setItem('r7_reconnect_token', token);  
+});
+
 // add a handler for game updates
 socket.on('gameinfo', (data: any) => {
-    localStorage.setItem('r7_reconnect_token', data.token);  
-
     $('#lobby-container').hide();
 
     const str = JSON.stringify(data, undefined, 4);
@@ -139,13 +144,10 @@ socket.on('gameinfo', (data: any) => {
 
             $('.turnindicator').css('transform', 'background-color ease 0.3s');
             $('.turnindicator').css('transform', oldTransform);
-            console.log(dif, previousTurnIndicatorDeltaWasNegative);
-            console.log(oldTransform);
             forceReflow($('.turnindicator'));
             $('.turnindicator').css('transition', 'transform ease 0.5s, background-color ease 0.3s');
             $('.turnindicator').css('transform', newTransform);
             forceReflow($('.turnindicator'));
-            console.log(newTransform);
 
             previousTurnIndicatorDeltaWasNegative = dif < 0;
         }

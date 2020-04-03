@@ -104,6 +104,14 @@ export default class Matchmaker<P, G> {
         players.forEach(p => this.players.delete(p));
     }
 
+    public getLobbies(player: P): Set<Lobby<P, G>> {
+        return this.players.get(player) ?? new Set();
+    }
+
+    public isInLobby(player: P, lobby: Lobby<P, G>): boolean {
+        return this.getLobbies(player).has(lobby);
+    }
+
     public startGame(lobby: Lobby<P, G>, playerCount?: number) {
         const waitingPlayers = this.joinableLobbies.get(lobby);
         if (waitingPlayers === undefined) throw new Error("Given lobby is not waiting for a game!");
@@ -134,6 +142,10 @@ export default class Matchmaker<P, G> {
     private removeInGameLobby(lobby: Lobby<P, G>) {
         this.allLobbies.delete(lobby.id);
         this.inGameLobbies.delete(lobby);
+    }
+
+    public forceUpdateSoon(lobby: Lobby<P, G>) {
+        this.sendUpdateSoon(lobby);
     }
 
     private sendUpdateSoon(lobby: Lobby<P, G>) {
