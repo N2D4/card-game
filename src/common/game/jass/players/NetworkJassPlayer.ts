@@ -174,7 +174,7 @@ export default class NetworkJassPlayer extends JassPlayer {
     }
 
     public async askForScore(rangeMin: number, rangeMax: number): Promise<number> {
-        return await this.askIntRange("guessScore", rangeMin, rangeMax + 1, {ms: 60000, value: 40});
+        return await this.askIntRange("guessScore", rangeMin, rangeMax + 1, {ms: 90000, value: 40});
     }
 
     public async chooseStichOrder<G, T extends JassStichOrder | G>(choices: T[]): Promise<T> {
