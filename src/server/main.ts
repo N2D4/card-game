@@ -332,6 +332,12 @@ function startServer() {
             console.log();
             console.log("Socket trying to join lobby " + data, socket.id);
 
+            if (allPlayersByToken.has(await secretTokenPromise)) {
+                console.log(`Player who already joined a game tried to join again!`);
+                socket.emit('lobby.error', 'already-joined');
+                return;
+            }
+
             const lobby = matchmaker.getLobby(data);
             if (lobby === undefined) {
                 console.log(`Lobby with id ${data} doesn't exist!`);
