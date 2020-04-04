@@ -495,7 +495,7 @@ function randomElement(obj: JQuery) {
 }
 
 function findTypeCard(type: [number, number]) {
-    return randomElement($('.card.' + fromTypeToClassCard(type).join('.')));
+    return randomElement($('#gamecontent .card.' + fromTypeToClassCard(type).join('.')));
 }
 
 function animateCard(existing: JQuery, newCard: JQuery) {

@@ -157,7 +157,7 @@ export default class SchieberJassGame extends JassGame {
             let points = 100;
             for (let i = 0; i < team.length; i++) {
                 const player = team[i];
-                const playerPoints = Math.floor(points / team.length - i);
+                const playerPoints = Math.floor(points / (team.length - i));
                 player.totalScore += playerPoints;
                 points -= playerPoints;
             }
