@@ -37,12 +37,12 @@ $('.toggle-scoreboard').click((e) => {
     $('#score').show();
 });
 
-//show last stich
+// show last stich
 $('.toggle-last-stich').click((e) => {
     $('#last-stich').show();
 });
 
-//hide last stich
+// hide last stich
 $('#last-stich').click((e) => {
     $('#last-stich').hide();
 });

@@ -243,6 +243,7 @@ body {
     top: 0;
     bottom: 0;
     right: 0;
+    padding-bottom: var(--player-hand-size);
     display: flex;
     justify-content: center;
     align-items: center;
