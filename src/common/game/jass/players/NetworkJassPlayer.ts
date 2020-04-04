@@ -182,7 +182,7 @@ export default class NetworkJassPlayer extends JassPlayer {
     }
 
     public async chooseToWyys(wyys: JassWyys[]): Promise<boolean> {
-        return await this.ask("youWannaWyys", wyys, {ms: 30000, value: false}, a => Boolean(a));
+        return await this.ask("youWannaWyys", wyys, {ms: 30000, value: true}, a => Boolean(a));
     }
 
 }

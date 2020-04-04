@@ -325,13 +325,13 @@ body {
     right: 2%;
 }
 
-@media (max-aspect-ratio: 2/3) {
+@media (max-aspect-ratio: 3/4) {
     #top-right-button-wrapper {
         flex-direction: column-reverse;
     }
 }
 
-@media (min-aspect-ratio: 2/3) {
+@media (min-aspect-ratio: 3/4) {
     #top-right-button-wrapper {
         flex-direction: row-reverse;
     }

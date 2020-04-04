@@ -374,49 +374,51 @@ socket.on('gameinfo', (data: any) => {
 
 
     // Answer questions asked by the server
-    const entries: [string, [string, any]][] = Object.entries(data.openQuestions);
-    for (const openQuestion of entries) {
-        const qid = openQuestion[0];
-        const qtype = openQuestion[1][0];
-        const qargs = openQuestion[1][1];
+    if (!isSpectating) {
+        const entries: [string, [string, any]][] = Object.entries(data.openQuestions);
+        for (const openQuestion of entries) {
+            const qid = openQuestion[0];
+            const qtype = openQuestion[1][0];
+            const qargs = openQuestion[1][1];
 
-        if (handledQuestions.has(qid)) continue;
+            if (handledQuestions.has(qid)) continue;
 
-        switch (qtype) {
-            case 'guessScore':
-                $('#diff').show();
-                $('.diff-go').off('click');
-                $('.diff-go').click(() => {
-                    const v = $('#slider').val() as string;
-                    answerQuestion(qid, v);
-                    $('#diff').hide();
-                });
-                break;
-            case 'chooseCard':
-                for (let i = 0; i < qargs.length; i++) {
-                    addCardHandler(qargs[i], () => {
-                        answerQuestion(qid, i);
+            switch (qtype) {
+                case 'guessScore':
+                    $('#diff').show();
+                    $('.diff-go').off('click');
+                    $('.diff-go').click(() => {
+                        const v = $('#slider').val() as string;
+                        answerQuestion(qid, v);
+                        $('#diff').hide();
                     });
-                }
-                break;
-            case 'chooseTrumpf':
-                $("#trumpf-container").show();
-                $('#trumpf-window-buttons').empty();
+                    break;
+                case 'chooseCard':
+                    for (let i = 0; i < qargs.length; i++) {
+                        addCardHandler(qargs[i], () => {
+                            answerQuestion(qid, i);
+                        });
+                    }
+                    break;
+                case 'chooseTrumpf':
+                    $("#trumpf-container").show();
+                    $('#trumpf-window-buttons').empty();
 
-                for (let i = 0; i < qargs.length; i++) {
-                    makeTrumpfButton(qargs[i]).click(() => {
-                        $("#trumpf-container").hide();
-                        answerQuestion(qid, i);
-                    });
-                }
-                break;
-            case 'youWannaWyys':
-                answerQuestion(qid, true);
-                break;
-            default:
-                alert("Unknown question type: " + qtype + ". Please contact the developer\n\nSee the console for more info");
-                // tslint:disable-next-line:no-console
-                console.error("Unknown question type", openQuestion);
+                    for (let i = 0; i < qargs.length; i++) {
+                        makeTrumpfButton(qargs[i]).click(() => {
+                            $("#trumpf-container").hide();
+                            answerQuestion(qid, i);
+                        });
+                    }
+                    break;
+                case 'youWannaWyys':
+                    answerQuestion(qid, true);
+                    break;
+                default:
+                    alert("Unknown question type: " + qtype + ". Please contact the developer\n\nSee the console for more info");
+                    // tslint:disable-next-line:no-console
+                    console.error("Unknown question type", openQuestion);
+            }
         }
     }
 
