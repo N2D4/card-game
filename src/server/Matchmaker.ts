@@ -84,6 +84,10 @@ export default class Matchmaker<T extends MatchmakerTypeArgs> {
         return this.lobbyData.get(lobby) as LData;
     }
 
+    public updateLobbyData<LData>(lobby: Lobby<LobbyTypeArgs<T, LData, any>>, updater: (a: LData) => LData) {
+        this.setLobbyData(lobby, updater(this.getLobbyData(lobby)));
+    }
+
     public setLobbyData<LData>(lobby: Lobby<LobbyTypeArgs<T, LData, any>>, data: LData) {
         this.lobbyData.set(lobby, data);
         this.sendUpdateSoon(lobby);

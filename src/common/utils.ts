@@ -1,4 +1,4 @@
-export const INCREMENTAL_VERSION = 9;
+export const INCREMENTAL_VERSION = 10;
 
 export function first<T>(iterable: Iterable<T>): T {
     for (const i of iterable) {
@@ -96,9 +96,8 @@ export function htmlEscape(s: string) {
     return s.replace(/[&<>"']/g, m => map.get(m) as string);
 }
 
-export function sanitize(strings: TemplateStringsArray, ...values: any[]): DocumentFragment {
-    const templ = document.createElement('template');
-    templ.innerHTML = strings.length === 1 ? strings[0] : strings.reduce((a, n, i) => `${a}${htmlEscape("" + values[i - 1])}${n}`);
-    return templ.content;
+export function sanitize(strings: TemplateStringsArray, ...values: any[]): string {
+    return strings.length === 1 ? strings[0]
+                                : strings.reduce((a, n, i) => `${a}${htmlEscape("" + values[i - 1])}${n}`);
 }
 

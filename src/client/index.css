@@ -15,6 +15,8 @@
     --ui-color-3: var(--jass-mat-background);
     --ui-color-4: var(--jass-mat-border);
     --ui-color-5: var(--scoreboard-border);
+    
+    --player-hand-size: 35vh;
 }
 
 html {
@@ -72,7 +74,7 @@ body {
  * Specify size of .player0.hand
  */
 #gamecontent > .player0.hand {
-    height: 35%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap */
+    height: var(--player-hand-size);
 } 
 
 /**
@@ -99,7 +101,7 @@ body {
  * Specify size for .player1.hand and .player3.hand (but not .player2.hand)
  */
 #gamecontent > #innergamecontent > .hand:not(.player0) {
-    width: 10%; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > .hand:not(.player0) */
+    width: 10vh; /* if we change this, also change size of #gamecontent > #innergamecontent > #table > #jassmatwrap and #gamecontent > .hand:not(.player0) */
 }
 
 /**
@@ -123,7 +125,7 @@ body {
  * The width of this container is the side length of the largest fitting square. We need this length in #jassmatborder.
  */
 #gamecontent > #innergamecontent > #table > #jassmatwrap {
-    max-width: 55vh;    /* 100vh - ownhand.height - otherhandtop.width */
+    max-width: calc(100vh - var(--player-hand-size) - 10vh);    /* 100vw - ownhand.height - otherhandtop.width */
     width: 100%;
     
     display: flex;
@@ -244,6 +246,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: scroll;
 }
 
 /**
@@ -296,48 +299,109 @@ body {
     background-color: var(--ui-color-1);
 }
 
-.lobby-playercount {
-    font-size: 50px;
-}
-/*
-.button.lobby-startgame {
-    background-color: #A1DE93;
+.title-1 {
+    font-size: 70px;
 }
 
-.button.reload-page {
-    background-color: #F7F48B;
+.title-2 {
+    font-size: 40px;
 }
 
-.button.diff-go {
-    background-color: #A1DE93;
-}*/
+#waiting-player-container {
+    white-space: pre-wrap;
+}
+
+/**
+ * Wrapper for scoreboard and last stich card
+ */
+#top-right-button-wrapper {
+    position: absolute;
+    display: flex;
+    top: 2%;
+    right: 2%;
+}
+
+@media (max-aspect-ratio: 1/1) {
+    #top-right-button-wrapper {
+        flex-direction: column-reverse;
+    }
+}
+
+@media (min-aspect-ratio: 1/1) {
+    #top-right-button-wrapper {
+        flex-direction: row-reverse;
+    }
+}
+
+#top-right-button-wrapper > div {
+    margin: 1vmin;
+    
+    width: 14.5vmin;
+    height: 18vmin;
+    max-width: calc(75px + 1.5vmin);
+    max-height: calc(100px + 1.5vmin);
+
+    border: 1.5vmin solid blanchedalmond;
+    border-radius: 5px;
+    box-sizing: border-box;
+    padding: 4px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
 
 /**
  * The button that displays the scoreboard.
  */
-.toggle-scoreboard {
+ #top-right-button-wrapper > .toggle-scoreboard {
     background-color: var(--scoreboard-background);
-    position: absolute;
-    top: 2%;
-    right: 2%;
+    border-color: var(--scoreboard-border);
 
-    width: 7.5vmin;
-    height: 10vmin;
-    max-width: 75px;
-    max-height: 100px;
-    border: 1.5vmin solid var(--scoreboard-border);
-    border-radius: 5px;
-
-    padding: 4px;
     font-size: 2px;
-    overflow: hidden;
 }
 
 /**
  * Make the scoreboard a tiny bit bigger on hover.
  */
-.toggle-scoreboard:hover {
+ #top-right-button-wrapper > .toggle-scoreboard:hover {
     transform: scale(1.1);
+}
+
+/**
+ * The button that displays the last stich.
+ */
+ #top-right-button-wrapper > .toggle-last-stich {
+    background-image: url(assets/sprites/jass/cardset.png);
+    background-size: 1000% 400%;
+    background-position: -900% 0%;
+    border-color: white;
+}
+
+/**
+* Make last Stich Button bigger
+*/
+#top-right-button-wrapper > .toggle-last-stich:hover {
+    transform: scale(1.1);
+}
+
+/**
+ * Card to show in the last stich GUI
+ */
+#gui .last-stich-cardholder {
+    --actual-width: 10vmin;
+    width: var(--actual-width);
+    height: calc(var(--actual-width) * 178 / 127);
+}
+
+#gui .last-stich-cardholder > .card {
+    width: 100%;
+    height: 100%;
+    display: inline-block
+}
+
+
+.stichtable td {
+    text-align: center;
+    width: 80vmin;
 }
 
 /**
@@ -659,7 +723,6 @@ body:not(.spectating) .player0.hand .card:not(.unselectable):hover > .cardimg {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    width: 40vw;
     max-width: 400px;
     justify-content: center;
 }

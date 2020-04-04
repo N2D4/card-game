@@ -102,15 +102,22 @@ function createJassPlayer(lobbyPlayer: LobbyPlayer, lobbyId: string): [JassPlaye
 }
 
 const schieberGameType = {
+    id: 'schieber',
     minPlayers: 4,
     maxPlayers: 4,
     constructor: SchieberJassGame,
 };
 const differenzlerGameType = {
+    id: 'differenzler',
     minPlayers: 4,
     maxPlayers: 4,
     constructor: DifferenzlerJassGame,
 };
+
+const gameTypes = new Map([
+    schieberGameType,
+    differenzlerGameType
+].map(a => [a.id, a]));
 
 function startGameOfType(
     type: GameTypeInfo,
@@ -223,11 +230,14 @@ function createLobby<LData, PData, T extends LobbyTypeArgs<MatchmakerTA, LData, 
 
     if (matchmaker.getLobby(urlID) !== undefined) return null;
 
-    const newAfterUpdate = (e: LobbyState<T>, m: Matchmaker<MatchmakerTA>) => {
-        mAfterUpdate(e, m);
-        if (e !== null) {
-            if (!e.inGame) {
-                e.players.forEach(p => p._socket?.emit('lobby.waiting-players-update', e.players.length));
+    const newAfterUpdate = (state: LobbyState<T>, m: Matchmaker<MatchmakerTA>) => {
+        mAfterUpdate(state, m);
+        if (state !== null) {
+            if (!state.inGame) {
+                state.players.forEach(p => p._socket?.emit('lobby.waiting-players-update', {
+                    players: state.players.map(a => a.name),
+                    gameType: (state as any).data.gameType?.id,
+                }));
             }
         }
     }
@@ -343,15 +353,16 @@ function startServer() {
             }
         }));
     
-        socket.on('lobby.request-start-game', wrapThrowing(async (data) => {
-            if (!data) data = 'default';
-            if (typeof data !== 'string') throw new Error(`Not a string!`);
+        socket.on('lobby.set-game-option', wrapThrowing(async (gameOption: unknown, lobbyId: unknown, ...args: unknown[]) => {
+            if (typeof gameOption !== 'string') throw new Error(`Game option not a string!`);
+            if (!lobbyId) lobbyId = 'default';
+            if (typeof lobbyId !== 'string') throw new Error(`Lobby ID not a string!`);
 
-            console.log(`Socket trying to start lobby ${data}`);
-            
-            const lobby = matchmaker.getLobby(data);
+            console.log(`Socket trying to set game option ${gameOption} of lobby ${lobbyId}`);
+
+            const lobby = matchmaker.getLobby(lobbyId);
             if (lobby === undefined) {
-                console.log(`Lobby with id ${data} doesn't exist!`);
+                console.log(`Lobby with id ${lobbyId} doesn't exist!`);
                 socket.emit('lobby.error', 'unknown-lobby-id');
                 return;
             }
@@ -364,7 +375,24 @@ function startServer() {
                 return;
             }
 
-            matchmaker.startGame(lobby);
+            switch (gameOption) {
+                case 'game-type': {
+                    const gameTypeId = args[0];
+                    if (typeof gameTypeId !== 'string') throw new Error('Game type not a string!');
+                    matchmaker.updateLobbyData(
+                        lobby,
+                        a => (a.gameType = gameTypes.get(gameTypeId) ?? throwExp(new Error(`Game type doesn't exist!`)), a)
+                    );
+                    break;
+                }
+                case 'request-start-game': {
+                    matchmaker.startGame(lobby);
+                    break;
+                }
+                default: {
+                    throw new Error(`Unknown game option!`);
+                }
+            }
         }));
 
         console.log();

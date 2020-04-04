@@ -88,6 +88,7 @@ export default class DifferenzlerJassGame extends JassGame {
             const scorePlus = stich.getScore();
             lastWinner.currentScore += scorePlus;
             this.broadcast(["stichwinner", lastWinner]);
+            this.broadcastLastStich(stich);
 
             // make stich ranking
             

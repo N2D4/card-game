@@ -17,7 +17,11 @@ export default class Serializer {
                 if (Array.isArray(serializable)) {
                     return serializable.map(el => Serializer.serialize(el));
                 } else {
-                    const nser: {[key: string]: ISerializable} = {};
+                    const nser: {[key: string]: ISerializable} = Object.create(null);
+                    if (![Object.prototype, null].includes(Object.getPrototypeOf(nser))) {
+                        console.error(`Object not serializable!`, nser);
+                        throw new Error(`Object not serializable! ${nser}`);
+                    }
                     for (const [key, val] of Object.entries(serializable)) {
                         nser[key] = Serializer.serialize(val);
                     }

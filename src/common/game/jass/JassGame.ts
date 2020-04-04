@@ -16,6 +16,7 @@ export interface IJassGameState {
 }
 
 export type Ranking = {team: JassPlayer[], score: number, totalScore: number, guessedScore?: number}[];
+export type Stich = {stichWinner: JassPlayer, score: number, cardsPlayed: JassStich}
 
 export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJassGameState, JassGameEvent> {
 
@@ -77,4 +78,8 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
         this.broadcast(["ranking", this.createRanking(teams, showGuessedScore)]);
     }
 
+    protected broadcastLastStich(stich: JassStich) {
+        const lastStich = {stichWinner: stich.getWinner(), score: stich.getScore(), cardsPlayed: stich};
+        this.broadcast(["last-stich", lastStich])
+    }
 }

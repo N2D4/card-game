@@ -5,6 +5,7 @@ import JassStichOrder from 'common/game/jass/JassStichOrder';
 import { random, wait } from 'common/utils';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import { JassWyys, JassWyysType } from '../JassWyys';
+import assert from 'assert';
 
 export default class SchieberJassGame extends JassGame {
     public readonly teams: [[JassPlayer, JassPlayer], [JassPlayer, JassPlayer]];
@@ -62,6 +63,9 @@ export default class SchieberJassGame extends JassGame {
 
         // stores if player wants to wyys
         const willWyys: boolean[] = [false, false, false, false];
+
+        // matching team
+        let ableToMatch = [...this.teams];
 
         for (let i = 0; i < numberOfRounds; i++) {
             // Create and broadcast the Stich object
@@ -129,6 +133,11 @@ export default class SchieberJassGame extends JassGame {
             const scorePlus = stich.getScore();
             lastWinner.currentScore += scorePlus;
             this.broadcast(["stichwinner", lastWinner]);
+            this.broadcastLastStich(stich);
+
+
+            // update teams that can still match
+            ableToMatch = ableToMatch.filter(a => a.includes(lastWinner));
             
             // update stich ranking
             this.broadcastRanking(this.teams, false);
@@ -143,13 +152,25 @@ export default class SchieberJassGame extends JassGame {
         // Last stich gives bonus points
         lastWinner.currentScore += 5;
 
+        // Give bonus point to players with matches
+        for (const team of ableToMatch) {
+            let points = 100;
+            for (let i = 0; i < team.length; i++) {
+                const player = team[i];
+                const playerPoints = Math.floor(points / team.length - i);
+                player.totalScore += playerPoints;
+                points -= playerPoints;
+            }
+            assert(points === 0);
+        }
+
         // create round ranking
         const finalTrumpf = trumpf;
         for (const player of this.players) {
             player.totalScore += finalTrumpf.getScoreMultiplier() * player.currentScore;
         }
         this.broadcastRanking(this.teams, false);
-
+        
         // reset curr Score
         for (const player of this.players) {
             player.currentScore = 0;

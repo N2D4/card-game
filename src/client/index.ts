@@ -37,6 +37,16 @@ $('.toggle-scoreboard').click((e) => {
     $('#score').show();
 });
 
+//show last stich
+$('.toggle-last-stich').click((e) => {
+    $('#last-stich').show();
+});
+
+//hide last stich
+$('#last-stich').click((e) => {
+    $('#last-stich').hide();
+});
+
 // close all windows
 $('.pop-up-window-container').hide();
 
@@ -65,7 +75,7 @@ const socket: SocketIOClient.Socket = socketio();
     // start game if the button is clicked
     $('.lobby-startgame').click(() => {
         socket.emit('lobby.get-lobby-ids', (lobbyIds: string[]) => {
-            socket.emit('lobby.request-start-game', lobbyIds[0]);
+            socket.emit('lobby.set-game-option', 'request-start-game', lobbyIds[0]);
         });
     });
 })();
@@ -79,8 +89,20 @@ socket.on('server.force-reload', () => {
 });
 
 // add a handler for lobby updates
-socket.on('lobby.waiting-players-update', (data: number) => {
-    $('.lobby-playercount').text(data);
+socket.on('lobby.waiting-players-update', (data: {players: string[], gameType: "schieber" | "differenzler"}) => {
+    const text1 = data.players.slice(0, 4).join('\n');
+    const text2 = "\n\n+" + Math.max(data.players.length - 4, 0) + " Spectators"
+
+    $('#waiting-player-container').text(text1 + text2);
+
+    
+    $('.game-type-selector').val(data.gameType);
+    $('.game-type-selector').off('change');
+    $('.game-type-selector').change(() => {
+        socket.emit('lobby.get-lobby-ids', (lobbyIds: string[]) => {
+            socket.emit('lobby.set-game-option', 'game-type', lobbyIds[0], $('.game-type-selector').val());
+        });
+    });
 });
 
 // add a handler for lobby errors
@@ -172,6 +194,14 @@ socket.on('gameinfo', (data: any) => {
             const playerNames = data.gameState.playerNames;
             if (m[0] === "ranking") {
                 updateRanking(m[1], playerNames);
+            }
+        }
+
+        // update last stich
+        for (const m of data.gameState.messages) {
+            const playerNames = data.gameState.playerNames;
+            if (m[0] === "last-stich") {
+                updateLastStich(m[1], playerNames);
             }
         }
 
@@ -493,6 +523,25 @@ function animateCard(existing: JQuery, newCard: JQuery) {
     newCard.css('transform-origin', '');
 }
 
+function updateLastStich(lastStich: {stichWinner: number, score: number, cardsPlayed: {player: number, card: number[]}[]}, playerNames: string[]) {
+    const tbody = $('#last-stich-window > .stichtable > tbody');
+    tbody.empty();
+
+    tbody.append(
+        sanitize`<tr><td>${playerNames[lastStich.stichWinner]}<br><br>Score: ${lastStich.score}</td>` +
+        lastStich.cardsPlayed.map(s => {
+            const card = fromTypeToClassCard([s.card[0], s.card[1]]).join(" ");
+            return (sanitize`
+                <td>
+                <div class="last-stich-cardholder"><div class="card ${card}"><div class="cardimg"></div></div></div>
+                <br>
+                ${playerNames[s.player] }
+                </td>
+            `);
+        }).join("") +
+        `</tr>`
+    )
+}
 
 function updateRanking(ranking: {team: number[], score: number, totalScore: number, guessedScore?: number}[], playerNames: string[]) {
     const tbody = $('#score-window > .scoretable > tbody'); 

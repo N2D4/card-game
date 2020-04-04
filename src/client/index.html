@@ -57,16 +57,32 @@
     </div>
 
     <div id="gui">
-        <div class="toggle-scoreboard-wrap">
-            <div class="toggle-scoreboard">
-                Ok so I hate homework and you wanna know why? DO YOU WANNA KNOW WHY? Because homework is work at home. And guess what? GUESS WHAT? My mom won't let me play Minecraft until I finish my homework. SHE WON'T LET ME PLAY MINECRAFT! This is atrocious, because Jack and Nathaniel are online and I can't play with them, and then when I get online they're done. THEIR MOM LETS THEM PLAY MINECRAFT BEFORE HOMEWORK! I hate it so much. I HATE IT! And one time, ohhhh this one time, she caught me playing Minecraft before homework. You know what she did? YOU KNOW WHAT SHE DID? She took away my Xbox for a week. 7 WHOLE DAYS! SHE'S THE WORST MOM EVER! I said, "Mom, let me play! I just crafted my first shovel!" And she didn't care. She did not care. She just hit the stupid off button on the TV. SHE JUST TURNED THE TV OFF AND I LOST MY SHOVEL! I hate homework, and I hate my mom. Ugh.
-            </div>
+    <div id="top-right-button-wrapper">
+        <div class="toggle-last-stich">
         </div>
+        <div class="toggle-scoreboard">
+            Ok so I hate homework and you wanna know why? DO YOU WANNA KNOW WHY? Because homework is work at home. And guess what? GUESS WHAT? My mom won't let me play Minecraft until I finish my homework. SHE WON'T LET ME PLAY MINECRAFT! This is atrocious, because Jack and Nathaniel are online and I can't play with them, and then when I get online they're done. THEIR MOM LETS THEM PLAY MINECRAFT BEFORE HOMEWORK! I hate it so much. I HATE IT! And one time, ohhhh this one time, she caught me playing Minecraft before homework. You know what she did? YOU KNOW WHAT SHE DID? She took away my Xbox for a week. 7 WHOLE DAYS! SHE'S THE WORST MOM EVER! I said, "Mom, let me play! I just crafted my first shovel!" And she didn't care. She did not care. She just hit the stupid off button on the TV. SHE JUST TURNED THE TV OFF AND I LOST MY SHOVEL! I hate homework, and I hate my mom. Ugh.
+        </div>
+    </div>
+
         <div id="trumpf"></div>
         <div class="pop-up-window-container" id="score">
             <div class="pop-up-window" id="score-window">
-                <div class="info-field">Scoreboard</div> <br>
+                <div class="title-2">Scoreboard</div> <br>
                 <table class="scoretable">
+                    <thead>
+                        
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        
+        <div class="pop-up-window-container" id="last-stich">
+            <div class="pop-up-window" id="last-stich-window">
+                <div class="title-2">Last Stich</div> <br>
+                <table class="stichtable">
                     <thead>
                         
                     </thead>
@@ -87,7 +103,7 @@
 
         <div class="pop-up-window-container" id="trumpf-container">
             <div class="pop-up-window" id="trumpf-window">
-                <div class="info-field">Choose a trumpf!</div><br>
+                <div class="info-field title-2">Choose a trumpf!</div><br>
                 <div id="trumpf-window-buttons"></div>
             </div>
         </div>
@@ -95,9 +111,13 @@
         <div class="pop-up-window-container" id="lobby-container">
             <div class="pop-up-window" id="lobby-window">
                 <div class="info-field">
-                    <span class="lobby-title">Waiting For Players</span><br><br>
-                    <span class="lobby-playercount">0</span><br>
+                    <span class="title-2">Waiting For Players</span><br><br>
+                    <div id="waiting-player-container"></div>
                 </div>
+                <select class="game-type-selector">
+                    <option value="differenzler">Differenzler</option>
+                    <option value="schieber">Schieber</option>
+                </select>
                 <div class="button lobby-startgame">Start Game</div><br>
                 <div class="button reload-page">Reload</div>
             </div>

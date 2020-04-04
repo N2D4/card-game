@@ -28,15 +28,22 @@ export default class JassStich {
     public getPlayable(hand: JassHand, allowUntertrumpfen: boolean): JassCard[] {
         let playable: JassCard[] = [];
         const firstCol = this.firstColor();
+
         if (firstCol !== undefined) {
+            // Effective colors
             playable = hand.cards.filter(a => this.trumpf.colorEffective(a.color, firstCol));
         }
+
         if (playable.find(a => a.color === firstCol && !this.trumpf.canBeHeldBack(a)) === undefined) {
+            // If no card is of the same card as the first card (or it's the buur), you can play any card
             playable = [...hand.cards];
         }
+
         if (!allowUntertrumpfen || playable.find(a => a.color === firstCol) !== undefined) {
+            // Untertrumpfen (see https://jassverzeichnis.ch/index.php/blog/163-jassregel-ist-untertrumpfen-erlaubt)
             playable = playable.filter(a => a.color === firstCol || !this.trumpf.isUntertrumpf(this, a));
         }
+
         return playable;
     }
 
