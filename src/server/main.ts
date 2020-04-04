@@ -68,8 +68,8 @@ function setLobbyPlayerSocket(player: LobbyPlayer, socket: socketio.Socket | nul
         socket.on('disconnect', () => {
             if (player._socket === socket) {
                 console.log(`Socket ${socket.id} disconnected`);
-                /*allPlayersByToken.delete(player.secretToken);
-                matchmaker.unqueuePlayer(player);*/
+                allPlayersByToken.delete(player.secretToken);
+                matchmaker.unqueuePlayer(player);
             }
         });
     }
@@ -331,7 +331,7 @@ function startServer() {
 
             const lobbyState = matchmaker.getLobbyState(lobby);
             if (lobbyState?.inGame) {
-                addSpectator(lobbyState, socket);
+                addSpectator(lobbyState.game, socket);
             } else {
                 resolver((await util.promisify(crypto.randomBytes)(32)).toString('base64'));
                 const res = matchmaker.queuePlayer(await createLobbyPlayer(name, await secretTokenPromise, socket), [lobby]);
