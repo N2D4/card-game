@@ -6,12 +6,23 @@ import { random, wait } from 'common/utils';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 
 export default class DifferenzlerJassGame extends JassGame {
+    public readonly teams = this.players.map(p => [p]);
+    private roundCount = 0; // one-based
 
     constructor(player1: JassPlayer, player2: JassPlayer, player3?: JassPlayer, player4?: JassPlayer) {
         super([player1, player2, player3, player4].filter(a => a !== undefined) as JassPlayer[]);
     }
 
+    public hasEnded(): boolean {
+        return this.roundCount >= 12;
+    }
+
     public async playRound(): Promise<void> {
+        if (this.hasEnded()) throw new Error(`Game has ended!`);
+
+        this.roundCount++;
+        this.resetGameState();
+
         // Prepare players
         const numberOfRounds: number = await this.preparePlayers();
 
@@ -19,6 +30,8 @@ export default class DifferenzlerJassGame extends JassGame {
         const startingPlayer = random(this.players);
         this.broadcast(["startingPlayer", startingPlayer]);
         
+        
+        this.broadcastRanking(this.teams, false);
 
         // Choose Trumpf
         const trumpf: JassStichOrder = random(JassStichOrder.colors());
@@ -27,7 +40,7 @@ export default class DifferenzlerJassGame extends JassGame {
 
         // Have all players guess scores
         await this.allPlayers(p => p.guessScore(0, 157));
-        this.broadcast(["playerGuesses", this.players.map(p => p.guessedScore)]);
+        this.broadcastRanking(this.teams, true);
 
         // Wait for all players and animations
         await wait(1500);
@@ -75,7 +88,11 @@ export default class DifferenzlerJassGame extends JassGame {
             const scorePlus = stich.getScore();
             lastWinner.currentScore += scorePlus;
             this.broadcast(["stichwinner", lastWinner]);
-            this.broadcast(["scoreplus", [scorePlus, lastWinner]]);
+
+            // make stich ranking
+            
+            this.broadcastRanking(this.teams, true);
+
             this.broadcast(["turnindicator", [lastWinner.index, 'green']]);
 
             // Wait for animations
@@ -85,17 +102,19 @@ export default class DifferenzlerJassGame extends JassGame {
 
         // Last stich gives bonus points
         lastWinner.currentScore += 5;
-        this.broadcast(["scoreplus", [5, lastWinner]]);
+        
+        // make final stich ranking
+        for (const player of this.players) { 
+            player.totalScore += Math.abs(player.currentScore - player.guessedScore);
+        }
+        this.broadcastRanking(this.teams, true);
 
 
-        // Create ranking
-        const ranking: JassPlayer[] = [...this.players];
-        ranking.sort((a, b) => Math.abs(a.currentScore - a.guessedScore) - Math.abs(b.currentScore - b.guessedScore));
-
-
-        // Broadcast ranking
-        this.broadcast(["ranking", ranking]);
+        // reset all players current score
+        for (const player of this.players) { 
+            player.currentScore = 0;
+            player.guessedScore = 0;
+        }
 
     }
-
 }

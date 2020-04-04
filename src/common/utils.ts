@@ -1,4 +1,11 @@
-export const INCREMENTAL_VERSION = 6;
+export const INCREMENTAL_VERSION = 9;
+
+export function first<T>(iterable: Iterable<T>): T {
+    for (const i of iterable) {
+        return i;
+    }
+    throw new Error(`Empty!`);
+}
 
 export function wrapThrowing<U extends unknown[], V>(f: (...args: U) => V | never): ((...args: U) => V | {error: unknown}) {
     return (...args: U) => {
@@ -32,11 +39,12 @@ export function* range(fromInclusive: number, toExclusive?: number) {
     }
 }
 
-export function shuffle<T>(arr: T[]): void {
+export function shuffle<T>(arr: T[]): T[] {
     for (let i = 0; i < arr.length; i++) {
         const j = Math.floor(Math.random() * arr.length);
         [arr[i], arr[j]] = [arr[j], arr[i]];
     }
+    return arr;
 }
 
 export function random<T>(arr: T[]): T {

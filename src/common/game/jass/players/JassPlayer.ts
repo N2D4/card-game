@@ -12,9 +12,10 @@ export default abstract class JassPlayer extends Player<IJassGameState> {
     public hand: JassHand = new JassHand([]);
     public guessedScore: number = -1;
     public currentScore: number = -1;
+    public totalScore: number = 0;
     public index: number = -1;
 
-    public async newGame(index: number, deck: CardDeck<JassCard>, numberOfCards: number): Promise<void> {
+    public async newRound(index: number, deck: CardDeck<JassCard>, numberOfCards: number): Promise<void> {
         this.index = index;
         this.currentScore = 0;
         this.guessedScore = -1;

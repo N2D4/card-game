@@ -35,6 +35,12 @@
         "max-line-length": false,
         "no-var-requires": false,
         "object-literal-shorthand": false,
-        "no-bitwise": false
+        "no-bitwise": false,
+        "no-shadowed-variable": [
+            true,
+            {
+                "underscore": false
+            }
+        ]
     }
 }

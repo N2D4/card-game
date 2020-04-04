@@ -1,3 +1,22 @@
+:root {
+    --turn-indicator-green: #50C878; /* was rgba(0, 255, 0)*/
+    --turn-indicator-yellow: #e4cb79; /* was rgb(255, 187, 0) */
+
+    --jass-mat-background: #3BB143; /* was green #008000*/
+    --jass-mat-border: #4F7942; /* was darkolivegreen #556B2F */
+
+    --table-background:  #C99C61; /* was rgb(196, 143, 0) */
+
+    --scoreboard-background: var(--jass-mat-background);
+    --scoreboard-border: #55342B; /* was #884422 */
+
+    --ui-color-1: #d3d3d3;
+    --ui-color-2: #00A86B;
+    --ui-color-3: var(--jass-mat-background);
+    --ui-color-4: var(--jass-mat-border);
+    --ui-color-5: var(--scoreboard-border);
+}
+
 html {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -11,9 +30,8 @@ html {
 }
 
 body {
-    background-color: rgb(196, 143, 0);
-    background-color: rgb(0, 235, 0)yellow;
-    color: white;
+    background-color: var(--table-background);
+    color: var(--ui-color-1);
     position: fixed;
     font-family: 'Roboto';
     top: 0;
@@ -143,7 +161,7 @@ body {
     width: 100%;
     padding-bottom: 100%;
 
-    background-color: darkolivegreen;
+    background-color: var(--jass-mat-border);
     border-radius: 20px;
 }
 
@@ -176,7 +194,7 @@ body {
     width: 100%;
     height: 15px;
     border-radius: 5px;   
-    background: #d3d3d3;
+    background: var(--ui-color-1);
     outline: none;
     opacity: 1;
     transition: opacity .2s;
@@ -192,7 +210,7 @@ body {
     height: 25px;
     border-radius: 50%;
     border: none;
-    background: #4CAF50;
+    background: var(--ui-color-2);
     cursor: pointer;
 }
 #slider::-moz-range-thumb {
@@ -200,7 +218,7 @@ body {
     height: 25px;
     border-radius: 50%;
     border: none;
-    background: #4CAF50;
+    background: var(--ui-color-2);
     cursor: pointer;
 }
 #slider::-ms-range-thumb {
@@ -208,7 +226,7 @@ body {
     height: 25px;
     border-radius: 50%;
     border: none;
-    background: #4CAF50;
+    background: var(--ui-color-2);
     cursor: pointer;
 }
 
@@ -234,12 +252,12 @@ body {
 .pop-up-window {
     width: 85%;
     max-width: 600px;
-    background-color: #70A1D7;
+    background-color: var(--ui-color-3);
     padding: 2%;
 
     
-    border: 1.5vmin solid #FFFFFF;
-    border-radius: 5px;
+    border: 1vmin solid var(--ui-color-1);
+    border-radius: 20px;
 
     display: flex;
     flex-direction: column;
@@ -253,24 +271,33 @@ body {
 
 .info-field {
     text-align: center;
-    background-color: #70A1D7;
-    padding: 2%;
+    background-color: var(--ui-color-4);
 
-    border: 1.5vmin solid #FFFFFF;
-    border-radius: 3px;
+    border: 0.8vmin solid var(--ui-color-1);
+    border-radius: 20px;
 
     padding: 40px;
-    margin: 20 px;
+    margin: 20px;
 }
 
 .button {
-    border-radius: 3px;
-    background-color: #70A1D7;
-    border: 1.5vmin solid #FFFFFF;
-    color: white;
-    padding: 5px;
-    margin: 5px;
+    width: 20%;
+    border-radius: 20px;
+    background-color: var(--ui-color-4);
+    border-bottom: 0.8vmin solid var(--ui-color-1);
+    color: var(--ui-color-1);
+    padding: 10px;
+    margin: 10px;
     text-align: center;
+}
+
+.button:hover {
+    color: var(--ui-color-4);
+    background-color: var(--ui-color-1);
+}
+
+.lobby-playercount {
+    font-size: 50px;
 }
 /*
 .button.lobby-startgame {
@@ -289,7 +316,7 @@ body {
  * The button that displays the scoreboard.
  */
 .toggle-scoreboard {
-    background-color: green;
+    background-color: var(--scoreboard-background);
     position: absolute;
     top: 2%;
     right: 2%;
@@ -298,7 +325,7 @@ body {
     height: 10vmin;
     max-width: 75px;
     max-height: 100px;
-    border: 1.5vmin solid #884422;
+    border: 1.5vmin solid var(--scoreboard-border);
     border-radius: 5px;
 
     padding: 4px;
@@ -317,8 +344,8 @@ body {
  * The scoreboard window should have a green background and brown border
  */
 #score-window {
-    background-color: green;
-    border: 2.5vmin solid #884422;
+    background-color: var(--scoreboard-background);
+    border: 2.5vmin solid var(--scoreboard-border);
     border-radius: 25px;
 }
 
@@ -340,14 +367,14 @@ body {
  * Border between every two columns of the scoreboard (but not on the sides)
  */
 .scoretable > * > * > th:not(:first-child), .scoretable > * > * > td:not(:first-child) {
-    border-left: 2px solid white;
+    border-left: 2px solid var(--ui-color-1);
 }
 
 /**
  * Border between the head and the body of the scoreboard
  */
 .scoretable > thead {
-    border-bottom: 2px solid white;
+    border-bottom: 2px solid var(--ui-color-1);
 }
 
 /**
@@ -369,7 +396,7 @@ body {
     bottom: 2.5%;
     right: 2.5%;
 
-    background-color: green;
+    background-color: var(--jass-mat-background);
     border-radius: 20px;
 }
 
@@ -489,13 +516,11 @@ body {
 * Move the player name fields in front of the cards. 
 * Also ads a rounded border and transparent background
 */
-
 .hand > .namefield {
     z-index: 3;
-    background: black;
+    background: rgba(0, 0, 0, 0.8);
     border-radius: 25px;
     padding: 10px;
-    opacity: 0.8;
     white-space: nowrap;
 }
 
@@ -626,8 +651,18 @@ body:not(.spectating) .player0.hand .card:not(.unselectable):hover > .cardimg {
 .card.schilte.koenig > .cardimg     { background-position: -700% -300%; }
 .card.schilte.ass > .cardimg        { background-position: -800% -300%; }
 
+/*
+* order the different trumpf options
+*/
 
-
+#trumpf-window-buttons {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 40vw;
+    max-width: 400px;
+    justify-content: center;
+}
 
 /**
  * The buttons to select the trump.

@@ -1,65 +1,95 @@
-import {assertNonNull} from 'src/common/utils';
+import {assertNonNull, first} from 'src/common/utils';
+import PossiblyWeakMap from 'src/common/PossiblyWeakMap';
 
-export type LobbyState<P, G> = null | (
-    {lobby: Lobby<P, G>} & (
-        {inGame: false, players: P[]} |
-        {inGame: true, game: G}
+export type MatchmakerTypeArgs<P = any, G = any> = {
+    P: P,
+    G: G,
+};
+
+export type LobbyTypeArgs<M extends MatchmakerTypeArgs = MatchmakerTypeArgs, LData = any, PData = any> = {
+    M: M,
+    P: M['P'],
+    G: M['G'],
+    LData: LData,
+    PData: PData,
+};
+
+export type LobbyState<T extends LobbyTypeArgs> = null | (
+    {lobby: Lobby<T>, data: T['LData']} & (
+        {inGame: false, players: T['P'][]} |
+        {inGame: true, game: T['G']}
     )
 );
 
-export type LobbyType<P, G> = {
+export type LobbyType<T extends LobbyTypeArgs> = {
     readonly id: string,
     readonly maxPlayerCount: number,
-    readonly startGame: (lobby: Lobby<P, G>, onClose: () => void, ...p: P[]) => G;
+    readonly startGame: (lobby: Lobby<T>, lobbyData: T['LData'], onClose: () => void, p: Map<T['P'], T['PData']>) => T['G'],
+    readonly defaultLobbyData: () => T['LData'],
+    readonly defaultPlayerData: () => T['PData'],
 };
 
-export type Lobby<P, G> = {
+export type Lobby<T extends LobbyTypeArgs> = {
     readonly id: string,
-    readonly type: LobbyType<P, G>,
-    readonly afterUpdate?: (e: LobbyState<P, G>, m: Matchmaker<P, G>) => void,
+    readonly type: LobbyType<T>,
+    readonly afterUpdate?: (e: LobbyState<T>, m: Matchmaker<T['M']>) => void,
     readonly expire?: number,
     readonly autoRefresh: boolean
 };
 
-// TODO remove expired objects from the maps
-export default class Matchmaker<P, G> {
-    private readonly unsentUpdates: Set<Lobby<P, G>> = new Set();
-    private readonly allLobbies: Map<string, Lobby<P, G>> = new Map();
-    private readonly joinableLobbies: Map<Lobby<P, G>, P[]> = new Map(); // TODO replace P[] with a linked set to allow fast en- and dequeuing, currently unqueuePlayers (hence also tryStartGame and queuePlayer) is O(number of players in game queue) which could be used in a DoS attack
-    private readonly inGameLobbies: Map<Lobby<P, G>, G> = new Map();
-    private readonly players: Map<P, Set<Lobby<P, G>>> = new Map();
+type LTA<T extends MatchmakerTypeArgs> = LobbyTypeArgs<T, any, any>;
+type LLobby<T extends MatchmakerTypeArgs> = Lobby<LTA<T>>;
 
-    public constructor(...lobbies: Lobby<P, G>[]) {
+// TODO remove expired objects from the maps
+export default class Matchmaker<T extends MatchmakerTypeArgs> {
+    private readonly unsentUpdates = new Set<LLobby<T>>();
+    private readonly allLobbies = new Map<string, LLobby<T>>();
+    private readonly joinableLobbies = new WeakMap<LLobby<T>, Map<T['P'], unknown>>();
+    private readonly inGameLobbies = new WeakMap<LLobby<T>, T['G']>();
+    private readonly players = new PossiblyWeakMap<T['P'], Set<LLobby<T>>>();
+    private readonly lobbyData = new WeakMap<LLobby<T>, unknown>();
+
+    public constructor(...lobbies: LLobby<T>[]) {
         for (const lobby of lobbies) {
             this.addLobby(lobby);
         }
     }
 
-    public addLobby(lobby: Lobby<P, G>) {
+    public addLobby(lobby: LLobby<T>) {
         if (this.allLobbies.has(lobby.id)) throw new Error(`A lobby with this ID already exists`);
         this.allLobbies.set(lobby.id, lobby);
-        const players: P[] = [];
-        this.joinableLobbies.set(lobby, players);
+        this.joinableLobbies.set(lobby, new Map());
+        this.lobbyData.set(lobby, lobby.type.defaultLobbyData());
         this.sendUpdateSoon(lobby);
     }
 
-    public hasExpired(lobby: Lobby<P, G>): boolean {
+    public hasExpired(lobby: LLobby<T>): boolean {
         return lobby.expire === undefined ? false : lobby.expire <= Date.now();
     }
 
-    public getLobby(id: string): Lobby<P, G> | undefined {
+    public getLobby(id: string): LLobby<T> | undefined {
         return this.allLobbies.get(id);
     }
 
-    public getLobbyState(lobby: Lobby<P, G>): LobbyState<P, G> {
+    public getLobbyState<LData, RData>(lobby: Lobby<LobbyTypeArgs<T, LData, RData>>): LobbyState<LobbyTypeArgs<T, LData, RData>> {
+        const data = this.getLobbyData(lobby);
         const players = this.joinableLobbies.get(lobby);
-        if (players !== undefined) return {inGame: false, players, lobby};
+        if (players !== undefined) return {inGame: false, players: [...players.keys()], lobby, data};
         const game = this.inGameLobbies.get(lobby);
-        if (game !== undefined) return {inGame: true, game, lobby};
+        if (game !== undefined) return {inGame: true, game, lobby, data};
         return null;
     }
 
-    public queuePlayer(player: P, lobbies: Lobby<P, G>[]): ("unknown" | "ingame" | "full" | "expired" | "success")[] {
+    public getLobbyData<LData>(lobby: Lobby<LobbyTypeArgs<T, LData, any>>): LData {
+        return this.lobbyData.get(lobby) as LData;
+    }
+
+    public setLobbyData<LData>(lobby: Lobby<LobbyTypeArgs<T, LData, any>>, data: LData) {
+        this.lobbyData.set(lobby, data);
+        this.sendUpdateSoon(lobby);
+    }
+
+    public queuePlayer(player: T['P'], lobbies: LLobby<T>[]): ("unknown" | "ingame" | "full" | "expired" | "success")[] {
         const result = lobbies.map(lobby => {
             const state = this.getLobbyState(lobby);
             if (state === null) return 'unknown';
@@ -76,27 +106,27 @@ export default class Matchmaker<P, G> {
         this.players.set(player, lobbySet);
         for (const lobby of lobbySet) {
             const players = assertNonNull(this.joinableLobbies.get(lobby));
-            players.push(player);
+            players.set(player, lobby.type.defaultPlayerData());
             this.sendUpdateSoon(lobby);
         }
 
         return result;
     }
 
-    public unqueuePlayer(player: P): void {
+    public unqueuePlayer(player: T['P']): void {
         return this.unqueuePlayers([player]);
     }
 
-    public unqueuePlayers(players: P[]): void {
+    public unqueuePlayers(players: T['P'][]): void {
         const playerSet = new Set(players);
 
-        const lobbies: Set<Lobby<P, G>> = players.reduce(
-            (s, p) => (this.players.get(p)?.forEach(l => s.add(l)), s), new Set<Lobby<P, G>>()
+        const lobbies: Set<LLobby<T>> = players.reduce(
+            (s, p) => (this.players.get(p)?.forEach(l => s.add(l)), s), new Set<LLobby<T>>()
         );
 
         lobbies.forEach(q => this.joinableLobbies.has(q) && this.joinableLobbies.set(
             q,
-            (this.joinableLobbies.get(q) as P[]).filter(p => !playerSet.has(p))
+            new Map([...(assertNonNull(this.joinableLobbies.get(q))).entries()].filter(p => !playerSet.has(p[0])))
         ));
 
         lobbies.forEach(lobby => this.sendUpdateSoon(lobby));
@@ -104,51 +134,56 @@ export default class Matchmaker<P, G> {
         players.forEach(p => this.players.delete(p));
     }
 
-    public getLobbies(player: P): Set<Lobby<P, G>> {
+    public getLobbies(player: T['P']): Set<LLobby<T>> {
         return this.players.get(player) ?? new Set();
     }
 
-    public isInLobby(player: P, lobby: Lobby<P, G>): boolean {
+    public isInLobby(player: T['P'], lobby: LLobby<T>): boolean {
         return this.getLobbies(player).has(lobby);
     }
 
-    public startGame(lobby: Lobby<P, G>, playerCount?: number) {
+    public startGame(lobby: LLobby<T>, playerCount?: number) {
         const waitingPlayers = this.joinableLobbies.get(lobby);
         if (waitingPlayers === undefined) throw new Error("Given lobby is not waiting for a game!");
 
-        if (playerCount === undefined) playerCount = Math.min(lobby.type.maxPlayerCount, waitingPlayers.length);
+        if (playerCount === undefined) playerCount = Math.min(lobby.type.maxPlayerCount, waitingPlayers.size);
         if (!Number.isInteger(playerCount)) throw new Error("Player count not an integer!");
-        if (playerCount < 1 || playerCount > waitingPlayers.length) {
-            throw new Error(`Player count ${playerCount} not in [1, ${waitingPlayers.length}]!`);
+        if (playerCount < 1 || playerCount > waitingPlayers.size) {
+            throw new Error(`Player count ${playerCount} not in [1, ${waitingPlayers.size}]!`);
         }
-        if (!lobby.autoRefresh && waitingPlayers.length > playerCount) {
+        if (!lobby.autoRefresh && waitingPlayers.size > playerCount) {
             throw new Error("Too many players in lobby! This lobby does not auto-refresh");
         }
 
-        const players = waitingPlayers.slice(0, playerCount);
+        const players = new Map<T['P'], unknown>();;
+        for (let i = 0; i < playerCount; i++) {
+            const f = first(waitingPlayers);
+            waitingPlayers.delete(f[0]);
+            players.set(f[0], f[1]);
+        }
 
         let isClosed = false;
         const ogOnClose = () => void (isClosed = true, this.sendUpdateSoon(lobby));
         const onClose = lobby.autoRefresh ? ogOnClose : () => void (this.removeInGameLobby(lobby), ogOnClose());
 
         if (!lobby.autoRefresh) this.joinableLobbies.delete(lobby);
-        const game = lobby.type.startGame(lobby, onClose, ...players);
+        const game = lobby.type.startGame(lobby, this.getLobbyData(lobby), onClose, players);
         if (!lobby.autoRefresh && !isClosed) this.inGameLobbies.set(lobby, game);
 
-        this.unqueuePlayers(players);
+        this.unqueuePlayers([...players.keys()]);
         this.sendUpdateSoon(lobby);
     }
 
-    private removeInGameLobby(lobby: Lobby<P, G>) {
+    private removeInGameLobby(lobby: LLobby<T>) {
         this.allLobbies.delete(lobby.id);
         this.inGameLobbies.delete(lobby);
     }
 
-    public forceUpdateSoon(lobby: Lobby<P, G>) {
+    public forceUpdateSoon(lobby: LLobby<T>) {
         this.sendUpdateSoon(lobby);
     }
 
-    private sendUpdateSoon(lobby: Lobby<P, G>) {
+    private sendUpdateSoon(lobby: LLobby<T>) {
         if (!this.unsentUpdates.has(lobby)) {
             setTimeout(() => {
                 lobby.afterUpdate?.(this.getLobbyState(lobby), this);
@@ -158,11 +193,9 @@ export default class Matchmaker<P, G> {
         }
     }
 
-    public getInfo(playerMap: (p: P) => any, gameMap: (g: G) => any): {} {
+    public getInfo(playerMap: (p: T['P']) => any, gameMap: (g: T['G']) => any): {} {
         return {
-            lobbyInfo: [...this.joinableLobbies.keys(), this.inGameLobbies.keys()],
-            lobbies: Object.fromEntries([...this.joinableLobbies.entries()].map(a => [a[0].id, a[1].map(playerMap)])),
-            inGame: Object.fromEntries([...this.inGameLobbies.entries()].map(a => [a[0].id, gameMap(a[1])]))
+            lobbyInfo: [...this.allLobbies.values()],
         };
     }
 }

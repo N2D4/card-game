@@ -5,18 +5,22 @@ import { range } from '../utils';
 export default abstract class CardGame<P extends Player<G>, C extends Card, G extends IGameState, U extends IGameState.IUpdate> {
     public readonly players: P[];
     public readonly updateHandlers: ((state: G) => void)[];
-    private readonly gameState: G;
+    private gameState: G = undefined as any;
 
     constructor(players: P[]) {
         this.players = players;
         this.updateHandlers = this.players.map(p => ((state: G) => void p.sendGameState(state)));
-        this.gameState = this.createGameState();
+        this.resetGameState();
         this.broadcastGameState();
     }
 
     public onUpdate(handler: (state: G) => void) {
         this.updateHandlers.push(handler);
         handler(this.gameState);
+    }
+
+    protected resetGameState() {
+        this.gameState = this.createGameState();
     }
 
     protected async allPlayers<T>(func: (player: P) => Promise<T>): Promise<T[]> {

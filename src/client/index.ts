@@ -3,7 +3,10 @@ import { deepEquals, range, sanitize, random, throwExp, INCREMENTAL_VERSION } fr
 import $ from 'jquery';
 import socketio from 'socket.io-client';
 
-const _JASS_IS_DEBUG = false;
+declare global {
+    interface Window { _JASS_IS_DEBUG: boolean; }
+}
+window._JASS_IS_DEBUG = window._JASS_IS_DEBUG ?? false;
 
 let previousTurnIndicator: number | undefined;
 let previousTurnIndicatorDeltaWasNegative = false;
@@ -95,6 +98,10 @@ socket.on('server.reconnect-token', (token: string) => {
 socket.on('gameinfo', (data: any) => {
     $('#lobby-container').hide();
 
+    if (window._JASS_IS_DEBUG) {
+        console.log(data);
+    }
+
     const str = JSON.stringify(data, undefined, 4);
 
     const isSpectating = data.isSpectating;
@@ -128,8 +135,8 @@ socket.on('gameinfo', (data: any) => {
         previousTurnIndicator = undefined;
     } else {
         const colors = {
-            yellow: 'rgb(255, 187, 0)',
-            green: 'rgba(0, 255, 0, 1)',
+            yellow: 'var(--turn-indicator-yellow)',
+            green: 'var(--turn-indicator-green)',
         };
 
         let newTurnIndicator = tplayer(data.gameState.turnIndicator[0]);
@@ -161,23 +168,15 @@ socket.on('gameinfo', (data: any) => {
     if (data.gameState !== undefined) {
 
         // update scoreboard
-        const scores = [...range(data.gameState.playerHandSizes.length)].map(a => 0);
-        const guesses = [...range(data.gameState.playerHandSizes.length)].map(a => 0);
         for (const m of data.gameState.messages) {
-            if (m[0] === "scoreplus") {
-                scores[tplayer(m[1][1])] += m[1][0];
-            }
-            if (m[0] === "playerGuesses") {
-                guesses[tplayer(0)] = m[1][0];
-                guesses[tplayer(1)] = m[1][1];
-                guesses[tplayer(2)] = m[1][2];
-                guesses[tplayer(3)] = m[1][3];
+            const playerNames = data.gameState.playerNames;
+            if (m[0] === "ranking") {
+                updateRanking(m[1], playerNames);
             }
         }
-        
-        updateScore(scores, guesses, data.gameState.playerNames);
 
         // set trumpf icon (bottom right corner)
+        $('#trumpf').removeClass("obe une schieb schelle roesle schilte eichel");
         for (const m of data.gameState.messages) {
             if (m[0] === "trumpf") {
                 if (m[1] === "OBENABE") $('#trumpf').addClass("obe");
@@ -191,9 +190,9 @@ socket.on('gameinfo', (data: any) => {
             }
         }
 
+
         // Initialize cards on the jass mat
-        // Maybe we should not replace cards that are already there, or is it better if animations are cancelled when the
-        // next packet is received?
+        // Maybe we should not replace cards that are already there
         if (data.gameState.stich !== undefined) {
             const jassmatHolder = $("#matcardwrap");
             let tagged = jassmatHolder.children('.card').toArray().map(a => $(a));
@@ -218,6 +217,7 @@ socket.on('gameinfo', (data: any) => {
                 animateCard(existing, card);
             }
 
+            // Move all the cards on the jassmat to the respective stich container
             for (const gestochen of tagged) {
                 const classCard = getClassCard(gestochen);
                 const type = fromClassCardToType(classCard);
@@ -230,7 +230,7 @@ socket.on('gameinfo', (data: any) => {
                     }
                     if (hasFound && message[0] === 'stichwinner') {
                         stichContainer = $('.hand.player' + tplayer(message[1]) + ' > .stiche');
-                        break;
+                        hasFound = false;
                     }
                 }
 
@@ -243,6 +243,21 @@ socket.on('gameinfo', (data: any) => {
                 stichContainer.append(newCard);
                 animateCard(gestochen, newCard);
             }
+        }
+    }
+
+    // Remove superfluous cards in the stich container (usually from previous rounds/games)
+    const isUnplayed = [...range(0, 4)].map(_ => [...range(0, 9)].map(_ => true));
+    for (const m of data.gameState.messages) {
+        if (m[0] === 'playcard') {
+            isUnplayed[m[1][0]][m[1][1] - 6] = false;
+        }
+    }
+    for (let i = 0; i < isUnplayed.length; i++) {
+        for (let j = 6; j < 6 + isUnplayed[i].length; j++) {
+            if (!isUnplayed[i][j-6]) continue;
+            const eles = $('.stiche > .card.' + fromTypeToClassCard([i, j]).join('.'));
+            $('.stiche > .card.' + fromTypeToClassCard([i, j]).join('.')).remove();
         }
     }
 
@@ -354,7 +369,7 @@ socket.on('gameinfo', (data: any) => {
                 break;
             case 'chooseTrumpf':
                 $("#trumpf-container").show();
-                $('.trumpf-go').empty();
+                $('#trumpf-window-buttons').empty();
 
                 for (let i = 0; i < qargs.length; i++) {
                     makeTrumpfButton(qargs[i]).click(() => {
@@ -375,7 +390,7 @@ socket.on('gameinfo', (data: any) => {
 
 
     // Display additional info if available
-    if (_JASS_IS_DEBUG && data.additionalInfo) {
+    if (window._JASS_IS_DEBUG && data.additionalInfo) {
         alert("Received additional info by the server.\n\n" + JSON.stringify(data.additionalInfo, undefined, 4));
     }
 
@@ -401,7 +416,7 @@ function makeTrumpfButton(name: any) {
     const cssOrder = (serverStichOrderToCSS.find(a => deepEquals(a[0], name)) || ["", name])[1];
 
     const window = $("#trumpf-window-buttons");
-    const res = $('<div class="trumpf-choose ' + cssOrder + '"></div>');
+    const res = $('<div class="button trumpf-choose ' + cssOrder + '"></div>');
     window.append(res);
     return res;
 }
@@ -478,11 +493,24 @@ function animateCard(existing: JQuery, newCard: JQuery) {
     newCard.css('transform-origin', '');
 }
 
-function updateScore(sc: number[], gs: number[], playerNames: string[]) {
-    const tbody = $('#score-window > .scoretable > tbody');
+
+function updateRanking(ranking: {team: number[], score: number, totalScore: number, guessedScore?: number}[], playerNames: string[]) {
+    const tbody = $('#score-window > .scoretable > tbody'); 
     tbody.empty();
-    for (let i = 0; i < sc.length; i++) {
-        tbody.append(sanitize`<tr><td>${playerNames[i]}</td><td>${gs[i]}</td><td>${sc[i]}</td></tr>`);
+    
+    if (ranking[0].guessedScore !== undefined) {
+        tbody.append(sanitize`<tr><td></td><td>Score</td><td>Score Guessed</td><td>Total Score</td></tr>`);
+        for (const r of ranking) {
+            const teamNames = r.team.map(p => playerNames[p]).join(' + ');
+            tbody.append(sanitize`<tr><td>${teamNames}</td><td>${r.score}</td><td>${r.guessedScore}</td><td>${r.totalScore}</td></tr>`);
+        }
+
+    } else {
+        tbody.append(sanitize`<tr><td></td><td>Score</td><td>Total Score</td></tr>`);
+        for (const r of ranking) {
+            const teamNames = r.team.map(p => playerNames[p]).join(' + ');
+            tbody.append(sanitize`<tr><td>${teamNames}</td><td>${r.score}</td><td>${r.totalScore}</td></tr>`);
+        }
     }
 }
 

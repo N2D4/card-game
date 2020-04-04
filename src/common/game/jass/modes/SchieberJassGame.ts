@@ -7,12 +7,25 @@ import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import { JassWyys, JassWyysType } from '../JassWyys';
 
 export default class SchieberJassGame extends JassGame {
+    public readonly teams: [[JassPlayer, JassPlayer], [JassPlayer, JassPlayer]];
+    private roundCount = 0; // one-based
 
     constructor(player1: JassPlayer, player2: JassPlayer, player3: JassPlayer, player4: JassPlayer, private startingPlayer?: JassPlayer) {
         super([player1, player2, player3, player4]);
+        this.teams = [[player1, player3], [player2, player4]];
+    }
+
+    public hasEnded() : boolean {
+        const ranking = this.createRanking(this.teams);
+        return ranking.some(r => r.totalScore >= 1000);
     }
 
     public async playRound(): Promise<void> {
+        if (this.hasEnded()) throw new Error(`Game has ended!`);
+
+        this.roundCount++;
+        this.resetGameState();
+
         const numberOfRounds = await this.preparePlayers();
 
         // find player with roesle 7 if starting player is undefined
@@ -20,17 +33,19 @@ export default class SchieberJassGame extends JassGame {
             this.startingPlayer = this.players.filter(p => p.hand.contains(JassCard.getRoesle7()))[0];
         this.broadcast(["startingPlayer", this.startingPlayer]);
         
+        this.broadcastRanking(this.teams, false);
+
         // Choose Trumpf
         const order: (JassStichOrder | "schieb")[] = [...JassStichOrder.getSchieberStichOrder()];
         order.push("schieb");
-        this.broadcast(["curturn", this.startingPlayer.index]);
+        this.broadcast(["turnindicator", [this.startingPlayer.index, 'yellow']]);
         let trumpf: (JassStichOrder | "schieb") = await this.startingPlayer.chooseStichOrder(order);
         this.broadcast(["trumpf", trumpf]);
 
         // if first player chose schieb, player 2 selects new trumpf
         if (trumpf === "schieb") {
             const nextPlayerIndex = (this.startingPlayer.index + 2) % this.players.length;
-            this.broadcast(["curturn", nextPlayerIndex]);
+            this.broadcast(["turnindicator", [nextPlayerIndex, 'yellow']]);
             trumpf = await this.players[nextPlayerIndex].chooseStichOrder(JassStichOrder.getSchieberStichOrder());
             this.broadcast(["trumpf", trumpf]);
         }
@@ -102,9 +117,11 @@ export default class SchieberJassGame extends JassGame {
                 this.broadcast(["playcard", played]);
             }
 
-            // add scores to team with better wyys
-            for (let k = wyysWinner; k < 4; k += 2) {
-                this.players[k].currentScore += JassWyys.sum(options[k]);
+            // add scores to team with better wyys after the end of the first turn
+            if (i === 0) {
+                for (let k = wyysWinner; k < 4; k += 2) {
+                    this.players[k].currentScore += JassWyys.sum(options[k]);
+                }
             }
 
             // get new winner
@@ -112,7 +129,10 @@ export default class SchieberJassGame extends JassGame {
             const scorePlus = stich.getScore();
             lastWinner.currentScore += scorePlus;
             this.broadcast(["stichwinner", lastWinner]);
-            this.broadcast(["scoreplus", [scorePlus, lastWinner]]);
+            
+            // update stich ranking
+            this.broadcastRanking(this.teams, false);
+
             this.broadcast(["turnindicator", [lastWinner.index, 'green']]);
 
             // Wait for animations
@@ -123,18 +143,18 @@ export default class SchieberJassGame extends JassGame {
         // Last stich gives bonus points
         lastWinner.currentScore += 5;
 
+        // create round ranking
+        const finalTrumpf = trumpf;
+        for (const player of this.players) {
+            player.totalScore += finalTrumpf.getScoreMultiplier() * player.currentScore;
+        }
+        this.broadcastRanking(this.teams, false);
 
-        // Create ranking
-        const ranking: {score: number, players: JassPlayer[]}[] = [];
-        ranking.push({score: trumpf.getScoreMultiplier() * (this.players[0].currentScore + this.players[2].currentScore), players: [this.players[0], this.players[2]]});
-        ranking.push({score: trumpf.getScoreMultiplier() * (this.players[1].currentScore + this.players[3].currentScore), players: [this.players[1], this.players[3]]});
-        ranking.sort((a, b) => a.score - b.score);
-
-
-        // Broadcast ranking
-        this.broadcast(["ranking", ranking]);
-        this.broadcast(["multiplier", trumpf.getScoreMultiplier()]);
-
+        // reset curr Score
+        for (const player of this.players) {
+            player.currentScore = 0;
+        }
+        
 
         // Next player
         this.startingPlayer = this.players[(this.startingPlayer.index + 1) % this.players.length];

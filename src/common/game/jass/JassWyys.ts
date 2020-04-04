@@ -7,6 +7,10 @@ export class JassWyys {
        
     }
 
+    /**
+     * Returns a positive number if `a` is a better wyys than `b`, a negative number if `b` is a better wyys than `a`,
+     * and 0 otherwise.
+     */
     public static compare(a: JassWyys, b: JassWyys): number {
         if (a.getScore() === b.getScore()) {
             if (a.type === JassWyysType.FUENFBLATT && b.type === JassWyysType.VIERGLEICHE)

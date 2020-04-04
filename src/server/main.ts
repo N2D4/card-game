@@ -8,9 +8,9 @@ import JassGame from 'src/common/game/jass/JassGame';
 import DifferenzlerJassGame from 'src/common/game/jass/modes/DifferenzlerJassGame';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
-import {wrapThrowing, shuffle, INCREMENTAL_VERSION, throwExp} from 'src/common/utils';
+import {wrapThrowing, shuffle, INCREMENTAL_VERSION, throwExp, wait} from 'src/common/utils';
 import ExampleJassPlayer from './ExampleJassPlayer';
-import Matchmaker, {LobbyState, LobbyType, Lobby} from './Matchmaker';
+import Matchmaker, {LobbyState, LobbyType, Lobby, MatchmakerTypeArgs, LobbyTypeArgs} from './Matchmaker';
 import path from 'path';
 import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
 import {assertNonNull} from 'src/common/utils';
@@ -18,9 +18,27 @@ import Serializer from 'src/common/serialize/Serializer';
 import util from 'util';
 import crypto from 'crypto';
 
+type GameTypeInfo = {
+    minPlayers: number, // will be filled up with bots
+    maxPlayers: number, // everyone else will be spectating
+    constructor: new (...players: JassPlayer[]) => JassGame,
+};
+
+type MatchmakerTA = MatchmakerTypeArgs<LobbyPlayer, JassGame>;
+type DefaultLobbyTA = LobbyTypeArgs<MatchmakerTA, {}, {}>;
+type PolymorphicLobbyTA = LobbyTypeArgs<MatchmakerTA, {gameType: GameTypeInfo}, {}>;
 
 type LobbyPlayer = {secretToken: string, name: string, _socket: socketio.Socket | null};
 const allPlayersByToken = new Map<string, {inGame: false, player: LobbyPlayer} | {inGame: true, player: NetworkJassPlayer}>(); // TODO prevent memory leaks, eg. using expiry
+
+
+function addSpectator(game: JassGame, socket: socketio.Socket) {
+    // @ts-ignore // TODO remove ignore comment with TypeScript 3.9 https://github.com/microsoft/TypeScript/pull/36696
+    game.onUpdate((state) => socket.emit('gameinfo', Serializer.serialize({
+        isSpectating: true,
+        gameState: state,
+    })));
+}
 
 function setSocketForToken(secretToken: string, socket: socketio.Socket): boolean {
     const player = allPlayersByToken.get(secretToken);
@@ -45,7 +63,7 @@ function setLobbyPlayerSocket(player: LobbyPlayer, socket: socketio.Socket | nul
     const oldSocket = player._socket;
     player._socket = socket;
     player._socket?.emit('server.reconnect-token', player.secretToken);
-    matchmaker.getLobbies(player).forEach(l => matchmaker.forceUpdateSoon(l));
+    matchmaker.getLobbies(player).forEach((l) => matchmaker.forceUpdateSoon(l));
     if (socket !== null) {
         socket.on('disconnect', () => {
             if (player._socket === socket) {
@@ -73,48 +91,109 @@ function createJassPlayer(lobbyPlayer: LobbyPlayer, lobbyId: string): [JassPlaye
     lobbyIdForPlayer.set(player, lobbyId);
     allPlayersByToken.set(lobbyPlayer.secretToken, {inGame: true, player});
     return [player, () => {
-        player.getSocket().disconnect();
+        (async () => {
+            // keep the socket connected for some more time
+            await wait(30000);
+            player.getSocket().disconnect();
+        })();
+        lobbyIdForPlayer.delete(player);
         allPlayersByToken.delete(player.secretToken);
     }];
 }
 
-function createLobbyType(id: string, maxPlayerCount: number, constructor: any) {
-    return {
-        id: id,
-        maxPlayerCount: maxPlayerCount,
-        startGame: (lobby: Lobby<LobbyPlayer, JassGame>, onClose: () => void, ...players: LobbyPlayer[]) => {
-            const arr = players.map(s => createJassPlayer(s, lobby.id));
-            shuffle(arr);
-            const botNames = ["Alexa Bot", "Cortana Bot", "Siri Bot", "Boomer Bot"];
-            while (arr.length < 4) {
-                arr.push([new ExampleJassPlayer(botNames.shift() ?? "Unnamed Bot"), () => 0]);
-            }
-            const game = new constructor(arr[0][0], arr[1][0], arr[2][0], arr[3][0]);
-            game.playRound().then(() => {
-                onClose();
-                for (const p of arr) {
-                    p[1]();
-                }
-            });
-            return game;
+const schieberGameType = {
+    minPlayers: 4,
+    maxPlayers: 4,
+    constructor: SchieberJassGame,
+};
+const differenzlerGameType = {
+    minPlayers: 4,
+    maxPlayers: 4,
+    constructor: DifferenzlerJassGame,
+};
+
+function startGameOfType(
+    type: GameTypeInfo,
+    lobby: Lobby<any>,
+    players: LobbyPlayer[],
+    onClose: () => void
+): JassGame {
+    let close = onClose;
+    try {
+        const arr: JassPlayer[] = [];
+
+        // Add actual players first
+        let pi = 0;
+        for (; arr.length < type.maxPlayers && pi < players.length; pi++) {
+            const created = createJassPlayer(players[pi], lobby.id);
+            arr.push(created[0]);
+            close = ((old) => () => (created[1](), old()))(close);
         }
-    };
+        // Fill with bots
+        const botNames = ["Alexa Bot", "Cortana Bot", "Siri Bot", "Boomer Bot"];
+        while (arr.length < type.minPlayers) {
+            arr.push(new ExampleJassPlayer(botNames.shift() ?? "Unnamed Bot"));
+        }
+
+        // Create game
+        const game = new type.constructor(...arr);
+
+        // All remaining players are spectators
+        for (; pi < players.length; pi++) {
+            const socket = players[pi]._socket;
+            if (socket !== null) addSpectator(game, socket);
+        }
+
+        // Play a bunch of rounds (asynchronously)
+        (async () => {
+            try {
+                while (!game.hasEnded()) {
+                    await game.playRound()
+                }
+            } finally {
+                close();
+            }
+        })();
+
+        // Return game object
+        return game;
+    } catch (e) {
+        close();
+        console.error(e);
+        throw new Error(`Error creating Jass game! ${e}`);
+    }
 }
 
-const soloDifferenzler = createLobbyType('solo-differenzler', 1, DifferenzlerJassGame);
-const duoDifferenzler = createLobbyType('duo-differenzler', 2, DifferenzlerJassGame);
-const differenzler = createLobbyType('duo-differenzler', 4, DifferenzlerJassGame);
-const soloSchieber = createLobbyType('solo-schieber', 1, SchieberJassGame);
-const duoSchieber = createLobbyType('duo-schieber', 2, SchieberJassGame);
-const schieber = createLobbyType('schieber', 4, SchieberJassGame);
+const matchmaker = new Matchmaker<MatchmakerTA>();
 
-const matchmaker = new Matchmaker<LobbyPlayer, JassGame>();
-const defaultLobby = assertNonNull(createLobby('default', (state, mm) => {
+const polymorphicLobbyType: LobbyType<PolymorphicLobbyTA> = {
+    id: 'polymorphic',
+    maxPlayerCount: 2048,
+    startGame: (lobby, lobbyData, onClose, players) => {
+        return startGameOfType(lobbyData.gameType, lobby, [...players.keys()], onClose);
+    },
+    defaultLobbyData: () => ({
+        gameType: differenzlerGameType,
+    }),
+    defaultPlayerData: () => ({}),
+};
+
+const defaultLobbyType: LobbyType<DefaultLobbyTA> = {
+    id: 'default',
+    maxPlayerCount: 1,
+    startGame: (lobby, lobbyData, onClose, players) => {
+        return startGameOfType(schieberGameType, lobby, [...players.keys()], onClose);
+    },
+    defaultLobbyData: () => ({}),
+    defaultPlayerData: () => ({}),
+};
+
+const defaultLobby = assertNonNull(createLobby('default', defaultLobbyType, (state, mm) => {
     if (state === null) return;
     if (state.inGame) return;
     if (state.players.length < state.lobby.type.maxPlayerCount) return;
     mm.startGame(state.lobby);
-}, soloDifferenzler, true));
+}, true));
 
 
 
@@ -126,7 +205,7 @@ try {
 
 try {
     if (!['TRUE', 'FALSE', undefined].includes(process.env.ENABLE_TG_BOT)) throw new Error(`Unknown value for env variable ENABLE_TG_BOT! ${process.env.ENABLE_TG_BOT}`);
-    if (process.env.ENABLE_TG_BOT === 'TRUE') startBot(createLobby);
+    if (process.env.ENABLE_TG_BOT === 'TRUE') startBot((s, onUpdate) => createLobby(s, polymorphicLobbyType, onUpdate));
     else console.log(`$ENABLE_TG_BOT not set to TRUE, not running the Telegram bot`);
 } catch (e) {
     console.error("Error starting Telegram bot!!", e);
@@ -134,17 +213,17 @@ try {
 
 setInterval(() => console.log(`15 minutes have passed`), 15*60*1000);
 
-function createLobby(
+function createLobby<LData, PData, T extends LobbyTypeArgs<MatchmakerTA, LData, PData>>(
     urlID: string,
-    afterUpdate?: (e: LobbyState<LobbyPlayer, JassGame>, m: Matchmaker<LobbyPlayer, JassGame>) => void,
-    type: LobbyType<LobbyPlayer, JassGame> = differenzler,
+    type: LobbyType<T>,
+    afterUpdate?: (e: LobbyState<T>, m: Matchmaker<MatchmakerTA>) => void,
     autoRefresh: boolean = false
-): Lobby<LobbyPlayer, JassGame> | null {
-    const mAfterUpdate = afterUpdate ?? (_ => {});
+): Lobby<T> | null {
+    const mAfterUpdate = afterUpdate ?? (() => 0);
 
     if (matchmaker.getLobby(urlID) !== undefined) return null;
 
-    const newAfterUpdate = (e: LobbyState<LobbyPlayer, JassGame>, m: Matchmaker<LobbyPlayer, JassGame>) => {
+    const newAfterUpdate = (e: LobbyState<T>, m: Matchmaker<MatchmakerTA>) => {
         mAfterUpdate(e, m);
         if (e !== null) {
             if (!e.inGame) {
@@ -163,7 +242,7 @@ function createLobby(
 
     console.log(`Created lobby ${urlID}`);
     console.log("Matchmaker info:", matchmaker.getInfo(s => s._socket?.id, g => g.constructor.name));
-    matchmaker.addLobby(lobby);
+    matchmaker.addLobby(lobby as Lobby<any>);
     return lobby;
 }
 
@@ -225,7 +304,6 @@ function startServer() {
             const player = allPlayersByToken.get(token);
             if (player === null) {
                 socket.emit('lobby.error', 'unknown-reconnect-token');
-                socket.disconnect();
                 return;
             }
             console.log(`Player reconnected! Welcome back`);
@@ -248,23 +326,18 @@ function startServer() {
             if (lobby === undefined) {
                 console.log(`Lobby with id ${data} doesn't exist!`);
                 socket.emit('lobby.error', 'unknown-lobby-id');
-                socket.disconnect();
                 return;
             }
 
             const lobbyState = matchmaker.getLobbyState(lobby);
             if (lobbyState?.inGame) {
-                lobbyState.game.onUpdate((state) => socket.emit('gameinfo', Serializer.serialize({
-                    isSpectating: true,
-                    gameState: state,
-                })));
+                addSpectator(lobbyState, socket);
             } else {
                 resolver((await util.promisify(crypto.randomBytes)(32)).toString('base64'));
                 const res = matchmaker.queuePlayer(await createLobbyPlayer(name, await secretTokenPromise, socket), [lobby]);
                 if (res.length !== 1 || res[0] !== 'success') {
                     console.log(`Error joining lobby: ${JSON.stringify(res)}`);
                     socket.emit('lobby.error', 'cant-join-lobby', res[0]);
-                    socket.disconnect();
                     return;
                 }
             }

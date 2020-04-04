@@ -15,11 +15,15 @@ export interface IJassGameState {
     turnIndicator: [number, 'green' | 'yellow'] | undefined;
 }
 
+export type Ranking = {team: JassPlayer[], score: number, totalScore: number, guessedScore?: number}[];
+
 export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJassGameState, JassGameEvent> {
 
     constructor(players: JassPlayer[]) {
         super(players);
     }
+
+    public abstract hasEnded(): boolean
 
     protected async preparePlayers(): Promise<number> {
         // Prepare deck
@@ -28,7 +32,7 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
         const numberOfRounds = deck.size() / this.players.length;
 
         // Prepare players
-        await this.allPlayersIter((i, p) => p.newGame(i, deck, numberOfRounds));
+        await this.allPlayersIter((i, p) => p.newRound(i, deck, numberOfRounds));
 
         return numberOfRounds;
     }
@@ -57,6 +61,20 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
     // TODO: Delet this; it's only for backwards compatibility so JassGames that weren't updated still compile
     public broadcastB(...args: any[]) {
         throw new Error("Removed feature; use new broadcast API");
+    }
+    
+    protected createRanking(teams: JassPlayer[][], showGuessedScore?: boolean) : Ranking {
+        const sumScore = (team: JassPlayer[]) => team.reduce((s,p) => s + p.currentScore, 0);
+        const sumTotalScore = (team: JassPlayer[]) => team.reduce((s,p) => s + p.totalScore, 0);
+        const sumGuessedScore = (team: JassPlayer[]) => team.reduce((s,p) => s + p.guessedScore, 0);
+        if (showGuessedScore === undefined || showGuessedScore === false)
+            return teams.map(t => ({team: t, score: sumScore(t), totalScore: sumTotalScore(t)}));
+        else 
+            return teams.map(t => ({team: t, score: sumScore(t), totalScore: sumTotalScore(t), guessedScore: sumGuessedScore(t)}));
+    }
+
+    protected broadcastRanking(teams: JassPlayer[][], showGuessedScore: boolean) {
+        this.broadcast(["ranking", this.createRanking(teams, showGuessedScore)]);
     }
 
 }

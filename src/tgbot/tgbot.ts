@@ -5,7 +5,7 @@ function createURLIDFromID(id: string): string {
     return 'tg-' + encodeURIComponent(id);
 }
 
-export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any, any>) => void) => Lobby<any, any> | null) {
+export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any>) => void) => Lobby<any> | null) {
     const token = process.env.TG_API_KEY || 'not set';
     const gameName = process.env.TG_GAME_NAME || 'not set';
     const admins = new Set((process.env.TG_ADMIN_IDS || '').split(',').map(a => Number(a)));
@@ -34,13 +34,14 @@ export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any, 
 
     // user types @bot
     bot.on('inline_query', (inlineQuery) => {
-        console.log('inline_query');
-        bot.answerInlineQuery(inlineQuery.id, [{
-            type: 'game',
-            id: gameName,
-            game_short_name: gameName,
-            reply_markup: {inline_keyboard: [[{text: "Connecting...", callback_game: {}}]]}
-        }]);
+        bot.answerInlineQuery(inlineQuery.id, [
+            {
+                type: 'game',
+                id: gameName,
+                game_short_name: gameName,
+                reply_markup: {inline_keyboard: [[{text: "Connecting...", callback_game: {}}]]}
+            },
+        ]);
     });
 
 
