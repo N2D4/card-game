@@ -18,11 +18,13 @@ export default class SchieberJassGame extends JassGame {
 
     public hasEnded() : boolean {
         const ranking = this.createRanking(this.teams);
-        return ranking.some(r => r.totalScore >= 1000);
+        return ranking.some(r => r.totalScore >= 2500);
     }
 
     public async playRound(): Promise<void> {
         if (this.hasEnded()) throw new Error(`Game has ended!`);
+
+        this.broadcast(["gameType", "schieber"]);
 
         this.roundCount++;
         this.resetGameState();
@@ -148,6 +150,8 @@ export default class SchieberJassGame extends JassGame {
             await wait(1500);
         }
 
+        // Broadcast an empty stich
+        this.broadcast(["stichinfo", new JassStich(trumpf)]);
 
         // Last stich gives bonus points
         lastWinner.currentScore += 5;
@@ -175,6 +179,9 @@ export default class SchieberJassGame extends JassGame {
         for (const player of this.players) {
             player.currentScore = 0;
         }
+
+
+        await wait(4000);
         
 
         // Next player

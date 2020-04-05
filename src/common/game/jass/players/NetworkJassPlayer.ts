@@ -2,7 +2,7 @@ import { JassCard } from "common/game/jass/JassCard";
 import JassStichOrder from "common/game/jass/JassStichOrder";
 import { JassWyys } from "common/game/jass/JassWyys";
 import Serializer from "common/serialize/Serializer";
-import { pseudoUUID, wait, wrapThrowing } from "common/utils";
+import {wait, wrapThrowing, first} from "common/utils";
 import ISerializable from "src/common/serialize/ISerializable";
 import JassPlayer from "./JassPlayer";
 import crypto from 'crypto';
@@ -28,7 +28,7 @@ export default class NetworkJassPlayer extends JassPlayer {
     private openQuestions: Map<QuestionID, [string, any]> = new Map();
     private questionResolvers: Map<QuestionID, (response: any) => void> = new Map();
 
-    public constructor(playerSocket: PlayerSocket, public readonly playerName: string, public readonly secretToken: string) {
+    public constructor(playerSocket: PlayerSocket, public readonly playerName: string) {
         super();
         this.setSocket(playerSocket);
     }
@@ -51,6 +51,7 @@ export default class NetworkJassPlayer extends JassPlayer {
             const qid = data[0];
             const resolve = this.questionResolvers.get(qid);
             if (resolve === undefined) {
+                console.log(`Player ${this.getName()} answered question with invalid question ID ${qid}! (Example for an available ID: ${first(this.questionResolvers)[0]})`);
                 this.sendPacket("Invalid question ID: " + qid);
                 return;
             }

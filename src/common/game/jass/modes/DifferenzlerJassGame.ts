@@ -20,6 +20,8 @@ export default class DifferenzlerJassGame extends JassGame {
     public async playRound(): Promise<void> {
         if (this.hasEnded()) throw new Error(`Game has ended!`);
 
+        this.broadcast(["gameType", "differenzler"]);
+
         this.roundCount++;
         this.resetGameState();
 
@@ -100,6 +102,9 @@ export default class DifferenzlerJassGame extends JassGame {
             await wait(1500);
         }
 
+        // Broadcast an empty stich
+        this.broadcast(["stichinfo", new JassStich(trumpf)]);
+
 
         // Last stich gives bonus points
         lastWinner.currentScore += 5;
@@ -116,6 +121,9 @@ export default class DifferenzlerJassGame extends JassGame {
             player.currentScore = 0;
             player.guessedScore = 0;
         }
+
+
+        await wait(4000);
 
     }
 }

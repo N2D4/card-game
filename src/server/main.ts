@@ -17,6 +17,76 @@ import {assertNonNull} from 'src/common/utils';
 import Serializer from 'src/common/serialize/Serializer';
 import util from 'util';
 import crypto from 'crypto';
+import child_process from 'child_process';
+import ISerializable from 'src/common/serialize/ISerializable';
+import readline from 'readline';
+
+class ShellPlayer {
+    private readonly process: child_process.ChildProcess;
+    private readonly stdout: readline.Interface;
+    private readonly stderr: readline.Interface;
+    private readonly handlers = new Map<string, ((...ISerializable: any[]) => void)[]>();
+
+    constructor(cmd: string) {
+        const waitPromise = wait(500);
+        console.log(`Running command ${cmd}`);
+
+        this.process = child_process.spawn('/bin/sh', ['-c', cmd], {stdio: 'pipe'});
+        this.process.stdout!.setEncoding('utf8');
+        this.process.on('exit', (exitCode) => {
+            console.log(`Process ${cmd} exited with error code ${exitCode}`);
+        });
+
+        this.stdout = readline.createInterface({
+            input: this.process.stdout ?? throwExp(new Error(`No stdout!`)),
+        });
+        this.stdout.on('line', (data) => {
+            console.error("sh stdout>", data);
+            const json = JSON.parse(data);
+            if (!Array.isArray(json)) {
+                console.error(`Message not a JSON array with length >= 1!`, json);
+                throw new Error(`Message not a JSON array with length >= 1!`);
+            }
+            const args = json.slice(1);
+            waitPromise.then(() => {
+                (
+                    this.handlers.get(json[0]) ??
+                    (console.error(`No handlers registered for event ${json[0]}!`), [])
+                ).forEach(a => a(...args))
+            });
+        });
+
+        this.stderr = readline.createInterface({
+            input: this.process.stderr ?? throwExp(new Error(`No stderr!`)),
+        });
+        this.stderr.on('line', (data) => {
+            console.error("sh stderr>", data);
+        });
+
+    }
+
+    public disconnect(): void {
+        this.process.kill();
+    }
+
+    public emit(eventName: string, ...data: ISerializable[]): void {
+        if (this.process.killed) {
+            console.warn(`Tried emitting ${eventName} to dead process! Ignoring`);
+            return;
+        }
+        this.process.stdin!.write(JSON.stringify([eventName, ...data]) + "\n", "utf-8");
+    }
+
+    public on(eventName: string, callback: (...data: ISerializable[]) => void): void {
+        if (!this.handlers.has(eventName)) this.handlers.set(eventName, []);
+        this.handlers.get(eventName)!.push(callback);
+    }
+}
+
+function createBotPlayer(name: string) {
+    return process.argv.length <= 2 ? new ExampleJassPlayer(name)
+                                    : new NetworkJassPlayer(new ShellPlayer(process.argv[2]), name);
+}
 
 type GameTypeInfo = {
     minPlayers: number, // will be filled up with bots
@@ -83,13 +153,13 @@ const playerNames = new WeakMap<LobbyPlayer, string>();
  * Returns the player object and a function used to destroy it.
  */
 function createJassPlayer(lobbyPlayer: LobbyPlayer, lobbyId: string): [JassPlayer, () => void] {
+    const secretToken = lobbyPlayer.secretToken;
     const player = new NetworkJassPlayer(
         setLobbyPlayerSocket(lobbyPlayer, null) ?? throwExp(new Error(`Lobby player must have a socket!`)),
         lobbyPlayer.name,
-        lobbyPlayer.secretToken
     );
     lobbyIdForPlayer.set(player, lobbyId);
-    allPlayersByToken.set(lobbyPlayer.secretToken, {inGame: true, player});
+    allPlayersByToken.set(secretToken, {inGame: true, player});
     return [player, () => {
         (async () => {
             // keep the socket connected for some more time
@@ -97,7 +167,7 @@ function createJassPlayer(lobbyPlayer: LobbyPlayer, lobbyId: string): [JassPlaye
             player.getSocket().disconnect();
         })();
         lobbyIdForPlayer.delete(player);
-        allPlayersByToken.delete(player.secretToken);
+        allPlayersByToken.delete(secretToken);
     }];
 }
 
@@ -139,7 +209,7 @@ function startGameOfType(
         // Fill with bots
         const botNames = ["Alexa Bot", "Cortana Bot", "Siri Bot", "Boomer Bot"];
         while (arr.length < type.minPlayers) {
-            arr.push(new ExampleJassPlayer(botNames.shift() ?? "Unnamed Bot"));
+            arr.push(createBotPlayer(botNames.shift() ?? "Unnamed Bot"));
         }
 
         // Create game
@@ -281,8 +351,13 @@ function startServer() {
     const io: socketio.Server = socketio(server);
     
     io.on('connection', (socket) => {
+        let isResolving = false;
         let resolver: (s: string) => void;
         const secretTokenPromise = new Promise<string>(resolve => resolver = resolve);
+
+        socket.on('disconnect', () => {
+            console.log("Socket disconnected", socket.id);
+        });
         
         socket.on('lobby.get-lobby-ids', wrapThrowing(async (resp) => {
             if (typeof resp !== 'function') throw new Error(`resp not a callback!`);
@@ -292,7 +367,10 @@ function startServer() {
         }));
 
         socket.on('server.check-version', wrapThrowing((version) => {
-            if (version !== INCREMENTAL_VERSION) socket.emit('server.force-reload');
+            if (version !== INCREMENTAL_VERSION) {
+                console.log(`Telling socket ${socket.id} to reconnect`);
+                socket.emit('server.force-reload');
+            }
         }));
 
         socket.on('lobby.can-reconnect', wrapThrowing((token, lobbyId, resp) => {
@@ -317,6 +395,7 @@ function startServer() {
                 return;
             }
             console.log(`Player reconnected! Welcome back`);
+            isResolving = true;
             resolver(token);
             setSocketForToken(token, socket);
         }));
@@ -332,6 +411,10 @@ function startServer() {
             console.log();
             console.log("Socket trying to join lobby " + data, socket.id);
 
+            if (!isResolving) {
+                isResolving = true;
+                resolver((await util.promisify(crypto.randomBytes)(32)).toString('base64'));
+            }
             if (allPlayersByToken.has(await secretTokenPromise)) {
                 console.log(`Player who already joined a game tried to join again!`);
                 socket.emit('lobby.error', 'already-joined');
@@ -348,14 +431,16 @@ function startServer() {
             const lobbyState = matchmaker.getLobbyState(lobby);
             if (lobbyState?.inGame) {
                 addSpectator(lobbyState.game, socket);
+                console.log("Socket became a spectator");
             } else {
-                resolver((await util.promisify(crypto.randomBytes)(32)).toString('base64'));
+                console.log("About to queue socket");
                 const res = matchmaker.queuePlayer(await createLobbyPlayer(name, await secretTokenPromise, socket), [lobby]);
                 if (res.length !== 1 || res[0] !== 'success') {
                     console.log(`Error joining lobby: ${JSON.stringify(res)}`);
                     socket.emit('lobby.error', 'cant-join-lobby', res[0]);
                     return;
                 }
+                console.log("Socket successfully joined lobby");
             }
         }));
     

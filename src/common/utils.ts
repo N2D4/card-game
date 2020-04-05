@@ -1,4 +1,4 @@
-export const INCREMENTAL_VERSION = 15;
+export const INCREMENTAL_VERSION = 16;
 
 export function first<T>(iterable: Iterable<T>): T {
     for (const i of iterable) {
@@ -66,15 +66,6 @@ export function deepEquals(a: any, b: any) {
     }
 
     return true;
-}
-
-// TODO Use an unpredictable RNG
-export function pseudoUUID(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-      const r: number = Math.random() * 16 | 0;
-      const v: number = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
 }
 
 export async function wait<T>(ms: number, value?: T): Promise<T> {

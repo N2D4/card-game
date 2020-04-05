@@ -123,7 +123,7 @@ socket.on('gameinfo', (data: any) => {
     $('#lobby-container').hide();
 
     if (window._JASS_IS_DEBUG) {
-        console.log(data);
+        console.log(`Received game info`, data);
     }
 
     const str = JSON.stringify(data, undefined, 4);
@@ -432,7 +432,9 @@ socket.on('gameinfo', (data: any) => {
 
 
 function answerQuestion(qid: string, answer: any) {
-    socket.emit('answer', [qid, answer]);
+    const packet = [qid, answer];
+    if (window._JASS_IS_DEBUG) console.log(`Sending answer`, packet);
+    socket.emit('answer', packet);
     handledQuestions.add(qid);
 }
 
