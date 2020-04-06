@@ -339,7 +339,9 @@ socket.on('gameinfo', (data: any) => {
     for (let i = 0; i < data.gameState.playerNames.length; i++) {
         const cssplayer = tplayer(i);
         const cssplayerN = 'player' + cssplayer;
-        if(!isSpectating && cssplayer === 0) continue;
+        if(!isSpectating && cssplayer === 0) {
+            $('.' + cssplayerN + '.hand .namefield').remove();
+        }
 
         const namefield = $('.' + cssplayerN + '.hand .namefield');
         namefield.text(data.gameState.playerNames[i]);
