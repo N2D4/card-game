@@ -60,7 +60,11 @@ export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any>)
             if (caption === lastCaption) return;     // prevent spam on Telegram servers
 
             bot.editMessageReplyMarkup(
-                {inline_keyboard: [[{text: caption, callback_game: {}}]]},
+                {inline_keyboard: [[{
+                    text: caption,
+                    callback_game: o !== null ? {} : undefined,
+                    switch_inline_query_current_chat: o === null ? '' : undefined,
+                }]]},
                 {inline_message_id: inlineResult.inline_message_id}
             );
             lastCaption = caption;

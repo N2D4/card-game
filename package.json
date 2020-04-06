@@ -16,7 +16,8 @@
     "/assets/sprites/jass/schelle.png": "assets/sprites/jass/schelle.png",
     "/assets/sprites/jass/schieb.png": "assets/sprites/jass/schieb.png",
     "/assets/sprites/jass/schilte.png": "assets/sprites/jass/schilte.png",
-    "/assets/sprites/jass/une_ufe.png": "assets/sprites/jass/une_ufe.png"
+    "/assets/sprites/jass/une_ufe.png": "assets/sprites/jass/une_ufe.png",
+    "/assets/sprites/ui/select.png": "assets/sprites/ui/select.png"
   },
   "scripts": {
     "type-check": "tsc --noEmit",

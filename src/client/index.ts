@@ -58,9 +58,10 @@ const socket: SocketIOClient.Socket = socketio();
     const urlParams = new URLSearchParams(window.location.search);
     const requestedLobbyId = urlParams.get('id');
     const requestedPlayerName = urlParams.get('name') ?? 'Anonymous Player';
+    const tryReconnect = (urlParams.get('tryreconnect') ?? 'true') === 'true';
     const reconnectToken = localStorage.getItem('r7_reconnect_token');
 
-    if (!reconnectToken) {
+    if (!tryReconnect || !reconnectToken) {
         socket.emit('lobby.join', requestedLobbyId, requestedPlayerName);
     } else {
         socket.emit('lobby.can-reconnect', reconnectToken, requestedLobbyId, (canReconnect: boolean) => {
@@ -530,22 +531,21 @@ function animateCard(existing: JQuery, newCard: JQuery) {
 }
 
 function updateLastStich(lastStich: {stichWinner: number, score: number, cardsPlayed: {player: number, card: number[]}[]}, playerNames: string[]) {
-    const tbody = $('#last-stich-window > .stichtable > tbody');
-    tbody.empty();
+    const box = $('#last-stich-window > .stichtable');
+    box.empty();
 
-    tbody.append(
-        sanitize`<tr><td>${playerNames[lastStich.stichWinner]}<br><br>Score: ${lastStich.score}</td>` +
+    box.append(
+        sanitize`<div class="stichtable-entry">Stich Winner:<br>${playerNames[lastStich.stichWinner]}<br><br>Score:<br>${lastStich.score}</div>` +
         lastStich.cardsPlayed.map(s => {
             const card = fromTypeToClassCard([s.card[0], s.card[1]]).join(" ");
             return (sanitize`
-                <td>
+                <div class="stichtable-entry">
                 <div class="last-stich-cardholder"><div class="card ${card}"><div class="cardimg"></div></div></div>
                 <br>
                 ${playerNames[s.player] }
-                </td>
+                </div>
             `);
-        }).join("") +
-        `</tr>`
+        }).join("")
     )
 }
 

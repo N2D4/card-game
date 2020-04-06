@@ -8,8 +8,9 @@ import JassGame from 'src/common/game/jass/JassGame';
 import DifferenzlerJassGame from 'src/common/game/jass/modes/DifferenzlerJassGame';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
-import {wrapThrowing, shuffle, INCREMENTAL_VERSION, throwExp, wait} from 'src/common/utils';
-import ExampleJassPlayer from './ExampleJassPlayer';
+import {wrapThrowing, INCREMENTAL_VERSION, throwExp, wait} from 'src/common/utils';
+import ExampleJassPlayer from './bots/RandomJassPlayer';
+import ShellJassPlayer from './bots/ShellJassPlayer';
 import Matchmaker, {LobbyState, LobbyType, Lobby, MatchmakerTypeArgs, LobbyTypeArgs} from './Matchmaker';
 import path from 'path';
 import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
@@ -17,75 +18,10 @@ import {assertNonNull} from 'src/common/utils';
 import Serializer from 'src/common/serialize/Serializer';
 import util from 'util';
 import crypto from 'crypto';
-import child_process from 'child_process';
-import ISerializable from 'src/common/serialize/ISerializable';
-import readline from 'readline';
-
-class ShellPlayer {
-    private readonly process: child_process.ChildProcess;
-    private readonly stdout: readline.Interface;
-    private readonly stderr: readline.Interface;
-    private readonly handlers = new Map<string, ((...ISerializable: any[]) => void)[]>();
-
-    constructor(cmd: string) {
-        const waitPromise = wait(500);
-        console.log(`Running command ${cmd}`);
-
-        this.process = child_process.spawn('/bin/sh', ['-c', cmd], {stdio: 'pipe'});
-        this.process.stdout!.setEncoding('utf8');
-        this.process.on('exit', (exitCode) => {
-            console.log(`Process ${cmd} exited with error code ${exitCode}`);
-        });
-
-        this.stdout = readline.createInterface({
-            input: this.process.stdout ?? throwExp(new Error(`No stdout!`)),
-        });
-        this.stdout.on('line', (data) => {
-            console.error("sh stdout>", data);
-            const json = JSON.parse(data);
-            if (!Array.isArray(json)) {
-                console.error(`Message not a JSON array with length >= 1!`, json);
-                throw new Error(`Message not a JSON array with length >= 1!`);
-            }
-            const args = json.slice(1);
-            waitPromise.then(() => {
-                (
-                    this.handlers.get(json[0]) ??
-                    (console.error(`No handlers registered for event ${json[0]}!`), [])
-                ).forEach(a => a(...args))
-            });
-        });
-
-        this.stderr = readline.createInterface({
-            input: this.process.stderr ?? throwExp(new Error(`No stderr!`)),
-        });
-        this.stderr.on('line', (data) => {
-            console.error("sh stderr>", data);
-        });
-
-    }
-
-    public disconnect(): void {
-        this.process.kill();
-    }
-
-    public emit(eventName: string, ...data: ISerializable[]): void {
-        if (this.process.killed) {
-            console.warn(`Tried emitting ${eventName} to dead process! Ignoring`);
-            return;
-        }
-        this.process.stdin!.write(JSON.stringify([eventName, ...data]) + "\n", "utf-8");
-    }
-
-    public on(eventName: string, callback: (...data: ISerializable[]) => void): void {
-        if (!this.handlers.has(eventName)) this.handlers.set(eventName, []);
-        this.handlers.get(eventName)!.push(callback);
-    }
-}
 
 function createBotPlayer(name: string) {
     return process.argv.length <= 2 ? new ExampleJassPlayer(name)
-                                    : new NetworkJassPlayer(new ShellPlayer(process.argv[2]), name);
+                                    : new ShellJassPlayer(process.argv[2], name);
 }
 
 type GameTypeInfo = {
@@ -355,9 +291,9 @@ function startServer() {
         let resolver: (s: string) => void;
         const secretTokenPromise = new Promise<string>(resolve => resolver = resolve);
 
-        socket.on('disconnect', () => {
+        socket.on('disconnect', wrapThrowing(() => {
             console.log("Socket disconnected", socket.id);
-        });
+        }));
         
         socket.on('lobby.get-lobby-ids', wrapThrowing(async (resp) => {
             if (typeof resp !== 'function') throw new Error(`resp not a callback!`);
@@ -380,7 +316,7 @@ function startServer() {
 
             const player = allPlayersByToken.get(token);
             if (player === undefined) resp(false);
-            else if (player.inGame) resp(lobbyId === undefined || lobbyIdForPlayer.get(player.player) === lobbyId);
+            else if (player.inGame) resp(lobbyId === null || lobbyIdForPlayer.get(player.player) === lobbyId);
             else {
                 const lobby = matchmaker.getLobby(lobbyId);
                 if (lobby === undefined) resp(false);

@@ -272,8 +272,55 @@ body {
     align-items: center;
 }
 
+/** Styling for select gui elements
+*/
+
+.select {
+    width: 24%;
+
+    border-radius: 20px;
+    background-color: var(--ui-color-4);
+
+    background-image: url(assets/sprites/ui/select.png);
+
+    border: 0.8vmin solid var(--ui-color-1);
+    border-width: 0px 0px 0.8vmin 0px;
+    
+    color: var(--ui-color-1);
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+
+    padding: 10px;
+    margin: 10px;
+    text-align: center;
+    font-size: 20px;
+}
+
+.select::-ms-expand {
+	display: none;
+}
+
+.select:hover {
+    color: var(--ui-color-4);
+    background-color: var(--ui-color-1);
+}
+
+.select:focus {
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+}
+
+.select-option {
+    border: 0.8vmin solid var(--ui-color-1);
+    border-width: 0px 0px 0.8vmin 0px;
+    background-color: var(--ui-color-4);
+    color: var(--ui-color-1);
+}
+	
+
 /**
-* Styling for Button Elements
+* Styling for Button gui Elements
 */
 
 .info-field {
@@ -296,6 +343,7 @@ body {
     padding: 10px;
     margin: 10px;
     text-align: center;
+    font-size: 20px;
 }
 
 .button:hover {
@@ -394,6 +442,8 @@ body {
     --actual-width: 10vmin;
     width: var(--actual-width);
     height: calc(var(--actual-width) * 178 / 127);
+    display: inline-block;
+
 }
 
 #gui .last-stich-cardholder > .card {
@@ -401,9 +451,17 @@ body {
     height: 100%;
 }
 
+.stichtable-entry {
+    text-align:center;
+}
 
-.stichtable td {
-    width: 80vmin;
+
+.stichtable {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+    width: 100%;
 }
 
 /**
