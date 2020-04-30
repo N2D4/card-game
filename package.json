@@ -63,7 +63,7 @@
     "babel-polyfill": "^6.26.0",
     "dotenv-defaults": "^1.1.1",
     "express": "^4.16.4",
-    "jquery": "^3.3.1",
+    "jquery": "^3.5.0",
     "node-telegram-bot-api": "^0.40.0",
     "socket.io": "^2.1.1",
     "socket.io-client": "^2.1.1"
