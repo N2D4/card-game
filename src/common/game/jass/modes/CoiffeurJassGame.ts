@@ -1,4 +1,4 @@
-import CardDeck from 'common/game/CardDeck';
+/*import CardDeck from 'common/game/CardDeck';
 import { JassCard } from 'common/game/jass/JassCard';
 import JassGame from 'common/game/jass/JassGame';
 import JassHand from 'common/game/jass/JassHand';
@@ -84,4 +84,4 @@ export default class CoiffeurJassGame extends JassGame {
         this.startingPlayer = this.players[(this.startingPlayer.index + 1) % this.players.length];
 
     }
-}
+}*/
