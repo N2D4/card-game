@@ -20,6 +20,7 @@
     "/assets/sprites/ui/select.png": "assets/sprites/ui/select.png"
   },
   "scripts": {
+    "test": "jest",
     "type-check": "tsc --noEmit",
     "type-check:watch": "npm run type-check -- --watch",
     "build": "npm run build:types && npm run build:js",
@@ -28,7 +29,8 @@
     "dev-bundle": "webpack --mode=development",
     "prod-bundle": "webpack --mode=production",
     "run": "node -r dotenv-defaults/config lib/server/main.js",
-    "start": "npm run-script build:js && npm run-script dev-bundle && npm run-script run"
+    "serve": "npm run build:js && npm run prod-bundle && npm run run",
+    "start": "npm run build:js && npm run dev-bundle && npm run run"
   },
   "repository": {
     "type": "git",
@@ -48,24 +50,28 @@
     "@babel/preset-env": "^7.9.0",
     "@babel/preset-typescript": "^7.9.0",
     "@types/express": "^4.17.4",
+    "@types/jest": "^26.0.15",
     "@types/jquery": "^3.3.34",
-    "@types/node-telegram-bot-api": "^0.40.2",
+    "@types/node-telegram-bot-api": "^0.50.4",
     "@types/socket.io": "^2.1.0",
     "@types/socket.io-client": "^1.4.32",
+    "babel-jest": "^26.6.1",
     "babel-loader": "^8.1.0",
     "babel-plugin-module-resolver": "^4.0.0",
+    "jest": "^26.6.1",
+    "ts-node": "^9.0.0",
     "tslint": "^6.1.1",
-    "typescript": "^3.8.3",
-    "webpack": "^4.42.1",
-    "webpack-cli": "^3.3.11"
+    "typescript": "^4.0.3",
+    "webpack": "^5.2.0",
+    "webpack-cli": "^4.1.0"
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
-    "dotenv-defaults": "^1.1.1",
-    "express": "^4.16.4",
-    "jquery": "^3.3.1",
-    "node-telegram-bot-api": "^0.40.0",
-    "socket.io": "^2.1.1",
-    "socket.io-client": "^2.1.1"
+    "dotenv-defaults": "^2.0.1",
+    "express": "^4.17.1",
+    "jquery": "^3.5.1",
+    "node-telegram-bot-api": "^0.50.0",
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.1"
   }
 }

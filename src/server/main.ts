@@ -1,4 +1,4 @@
-import 'common/tweaks';
+import './server-tweaks';
 
 import express from 'express';
 import {startBot} from 'src/tgbot/tgbot';
@@ -18,6 +18,7 @@ import {assertNonNull} from 'src/common/utils';
 import Serializer from 'src/common/serialize/Serializer';
 import util from 'util';
 import crypto from 'crypto';
+import http from 'http';
 
 function createBotPlayer(name: string) {
     return process.argv.length <= 2 ? new ExampleJassPlayer(name)
@@ -35,11 +36,10 @@ type DefaultLobbyTA = LobbyTypeArgs<MatchmakerTA, {}, {}>;
 type PolymorphicLobbyTA = LobbyTypeArgs<MatchmakerTA, {gameType: GameTypeInfo}, {}>;
 
 type LobbyPlayer = {secretToken: string, name: string, _socket: socketio.Socket | null};
-const allPlayersByToken = new Map<string, {inGame: false, player: LobbyPlayer} | {inGame: true, player: NetworkJassPlayer}>(); // TODO prevent memory leaks, eg. using expiry
+const allPlayersByToken = new Map<string, {inGame: false, player: LobbyPlayer} | {inGame: true, player: NetworkJassPlayer}>(); // TODO prevent memory leaks, eg. using expiration
 
 
 function addSpectator(game: JassGame, socket: socketio.Socket) {
-    // @ts-ignore // TODO remove ignore comment with TypeScript 3.9 https://github.com/microsoft/TypeScript/pull/36696
     game.onUpdate((state) => socket.emit('gameinfo', Serializer.serialize({
         isSpectating: true,
         gameState: state,
@@ -279,7 +279,7 @@ function startServer() {
         app.use(key, (req, res, next) => res.sendFile(path.resolve(process.cwd(), value)));
     }
     
-    const server = app.listen(port, () => {
+    const server = http.createServer(app).listen(port, () => {
         // tslint:disable-next-line:no-console
         console.log(`Listening at http://localhost:${port}/`);
     });

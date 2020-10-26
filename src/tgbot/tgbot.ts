@@ -57,7 +57,7 @@ export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any>)
                           : o.inGame               ? `In-Game`
                           : o.players.length === 0 ? `Play`
                           :                          `${o.players.length} player${o.players.length === 1 ? '' : 's'} waiting!`;
-            if (caption === lastCaption) return;     // prevent spam on Telegram servers
+            if (caption === lastCaption) return;     // don't spam Telegram servers as there's some rate limiting
 
             bot.editMessageReplyMarkup(
                 {inline_keyboard: [[{
@@ -78,7 +78,7 @@ export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any>)
         if (callbackQuery.inline_message_id === undefined) throw new Error('callbackQuery.inline_message_id is undefined!');
 
         bot.answerCallbackQuery(callbackQuery.id, {
-            url: gameURL + '?id=' + createURLIDFromID(callbackQuery.inline_message_id) + '&name=' + encodeURIComponent(callbackQuery.from.first_name)
+            url: gameURL + '?id=' + createURLIDFromID(callbackQuery.inline_message_id) + '&name=' + encodeURIComponent(callbackQuery.from.first_name),
         });
     });
 }
