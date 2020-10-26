@@ -28,6 +28,14 @@ export function throwExp(error: unknown): never {
     throw error;
 }
 
+export function throwErr(error: string | Error): never {
+    if (typeof error === 'string') {
+        error = new Error(error);
+    }
+    throw error;
+}
+
+
 export function range(toExclusive: number): Generator<number>;
 export function range(fromInclusive: number, toExclusive: number): Generator<number, void, void>;
 export function* range(a: number, b?: number) {

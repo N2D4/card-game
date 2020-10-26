@@ -57,6 +57,18 @@ describe('throwExp(...)', () => {
   });
 });
 
+describe('throwExp(...)', () => {
+  test('throws errors', () => {
+    const err = new Error('5');
+    expect(() => throwExp(err)).toThrow(err);
+  });
+
+  test('throws an error with the string message', () => {
+    const err = '5';
+    expect(() => throwExp(err)).toThrow(err);
+  });
+});
+
 describe('range(...)', () => {
   test('returns the correct ranges', () => {
     expect([...range(0)]).toEqual([]);
