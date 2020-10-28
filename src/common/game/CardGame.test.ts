@@ -3,9 +3,21 @@ import CardGame from './CardGame';
 import Player from './Player';
 
 class MockGame extends CardGame<Player<IGameState>, Card, IGameState, IGameState.IUpdate> {
-    public playRound = jest.fn(async () => {});
-    public createGameState = jest.fn(() => "initial state");
-    public updateGameState = jest.fn(() => {});
+
+    constructor(players: Player<IGameState>[]) {
+        super(players);
+        this.playRound = jest.fn(this.playRound);
+        this.createGameState = jest.fn(this.createGameState);
+        this.updateGameState = jest.fn(this.updateGameState);
+    }
+
+    public async playRound() {}
+
+    public createGameState() {
+        return "initial state";
+    }
+
+    public updateGameState() {}
 }
 
 class MockPlayer {
@@ -15,20 +27,18 @@ class MockPlayer {
 }
 
 describe('CardGame', () => {
-    const p1 = new MockPlayer(1);
-    const p2 = new MockPlayer(2);
-    const p3 = new MockPlayer(3);
-
     test('is created', () => {
+        const p1 = new MockPlayer(1);
+        const p2 = new MockPlayer(2);
+        const p3 = new MockPlayer(3);
         const game = new MockGame([p1, p2, p3]);
         expect(game.players.length).toEqual(3);
-
-        expect(game.playRound.mock.calls.length).toEqual(0);
-        expect(game.createGameState.mock.calls.length).toEqual(1);
-        expect(game.updateGameState.mock.calls.length).toEqual(0);
     });
 
     test('broadcasting messages works', () => {
+        const p1 = new MockPlayer(1);
+        const p2 = new MockPlayer(2);
+        const p3 = new MockPlayer(3);
         const game = new MockGame([p1, p2, p3]);
         const mock = jest.fn();
         game.onUpdate(mock);
