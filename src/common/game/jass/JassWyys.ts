@@ -1,8 +1,8 @@
 import ISerializable from 'src/common/serialize/ISerializable';
-import {JassCard, JassColor, JassType} from './JassCard';
+import JassCard, {JassType} from './JassCard';
 
 
-export class JassWyys {
+export default class JassWyys {
     public constructor(public readonly card: JassCard, public readonly type: JassWyysType) {
        
     }

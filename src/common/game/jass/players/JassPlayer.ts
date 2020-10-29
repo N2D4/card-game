@@ -2,10 +2,10 @@ import CardDeck from 'common/game/CardDeck';
 import JassStichOrder from 'src/common/game/jass/JassStichOrder';
 import Player from 'src/common/game/Player';
 import ISerializable from 'src/common/serialize/ISerializable';
-import { JassCard, JassColor, JassType } from '../JassCard';
-import { IJassGameState } from '../JassGame';
+import JassCard from '../JassCard';
+import {IJassGameState} from '../JassGame';
 import JassHand from '../JassHand';
-import {JassWyys, JassWyysType} from '../JassWyys';
+import JassWyys from '../JassWyys';
 
 export default abstract class JassPlayer extends Player<IJassGameState> {
 
