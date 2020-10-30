@@ -97,6 +97,10 @@ export default abstract class JassStichOrder {
             const bestInStich = stich.cards.map(a => a.card).reduce((a: JassCard | undefined, n) => a === undefined ? n : this.max(a, n), undefined);
             return card.color === this.color && (bestInStich !== undefined && this.compare(card, bestInStich) <= 0);
         }
+
+        public isTrumpfColor(color: JassColor) {
+            return this.color === color;
+        }
     };
 
 
@@ -162,8 +166,8 @@ export default abstract class JassStichOrder {
         return a.type - b.type;
     }
 
-    public max(a: JassCard, b: JassCard): JassCard {
-        return this.compare(a, b) >= 0 ? a : b;
+    public max(...arr: JassCard[]): JassCard {
+        return arr.reduce((a, b) => this.compare(a, b) >= 0 ? a : b);
     }
 
     public colorEffective(color: JassColor, firstColor: JassColor): boolean {
@@ -172,6 +176,10 @@ export default abstract class JassStichOrder {
 
     public getScoreMultiplier(): number {
         return 1;
+    }
+
+    public isTrumpfColor(color: JassColor) {
+        return false;
     }
 
     public abstract serialize(): ISerializable;

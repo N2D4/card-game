@@ -1,5 +1,5 @@
 import Card from "common/game/Card";
-import { range } from "common/utils";
+import {range, naturalExtractComparator} from "common/utils";
 import ISerializable from "src/common/serialize/ISerializable";
 import CardDeck from "../CardDeck";
 
@@ -11,7 +11,7 @@ export class JassCard extends Card {
 
     private constructor(public readonly color: JassColor, public readonly type: JassType) {
         super();
-        if (JassCard.instances[color] !== undefined && JassCard.instances[color][type] !== undefined) {
+        if (JassCard.instances[color]?.[type]) {
             throw new Error("A JassCard was constructed manually. Don't do that; use JassCard.getCard(...) instead");
         }
     }
@@ -37,11 +37,18 @@ export class JassCard extends Card {
     }
 
     public static lexicographicCompare(a: JassCard, b: JassCard): number {
-        if (a.color !== b.color) {
-            return a.color - b.color;
-        } else {
-            return a.type - b.type;
-        }
+        return naturalExtractComparator<JassCard>(c => c.color, c => c.type)(a, b);
+    }
+
+    /**
+     * Returns true iff the two cards have the same color and their type differs by one.
+     */
+    public static isNeighbour(a: JassCard, b: JassCard): boolean {
+        return a.color === b.color && Math.abs(a.type - b.type) === 1;
+    }
+
+    public equals(b: JassCard): boolean {
+        return this.color === b.color && this.type === b.type;
     }
 
     public serialize(): ISerializable {

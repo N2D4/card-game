@@ -1,5 +1,8 @@
 export const INCREMENTAL_VERSION = 16;
 
+export type Comparator<T> = (a: T, b: T) => number;
+
+
 export function first<T>(iterable: Iterable<T>): T {
     for (const i of iterable) {
         return i;
@@ -91,4 +94,41 @@ export function sanitize(strings: TemplateStringsArray, ...values: any[]): strin
     return strings.length === 1 ? strings[0]
                                 : strings.reduce((a, n, i) => `${a}${htmlEscape("" + values[i - 1])}${n}`);
 }
+
+/**
+ * In-place stable sort. Returns `arr`
+ */
+export function stableSort<T>(arr: T[], comparator: Comparator<T>): T[] {
+    const indices = new Map<T, number>();
+    for (let i = 0; i < arr.length; i++) {
+        indices.set(arr[i], i);
+    }
+    return arr.sort(thenComparing((a, b) => (indices.get(a) ?? 0) - (indices.get(b) ?? 0), comparator));
+}
+
+export function thenComparing<T>(...comparators: Comparator<T>[]): Comparator<T> {
+    return (a, b) => {
+        for (const comp of comparators) {
+            const res = comp(a, b);
+            if (res !== 0) return res;
+        }
+        return 0;
+    };
+}
+
+export function naturalComparator(): Comparator<any> {
+    return (a, b) => a < b ? -1
+                   : a > b ? 1
+                   : 0;
+}
+
+export function extractComparator<T, R>(keyComparator: Comparator<R>, ...keyExtractors: ((t: T) => R)[]): Comparator<T> {
+    return thenComparing(...keyExtractors.map(e => (a: T, b: T) => keyComparator(e(a), e(b))));
+}
+
+export function naturalExtractComparator<T>(...keyExtractors: ((t: T) => any)[]): Comparator<T> {
+    return extractComparator(naturalComparator(), ...keyExtractors);
+}
+
+
 
