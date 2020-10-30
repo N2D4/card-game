@@ -1,7 +1,5 @@
 # card-game
 
-Heavy WIP
-
 Workspace setup: `npm install`, then `npm start` to start server
 
 Also, remember to set the required environment variables (see .env.defaults), eg. by creating a .env file

@@ -1,8 +1,8 @@
-import { JassCard } from 'common/game/jass/JassCard';
+import JassCard from 'common/game/jass/JassCard';
 import JassGame from 'common/game/jass/JassGame';
 import JassStich from 'common/game/jass/JassStich';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
-import { random, wait } from 'common/utils';
+import {random, wait} from 'common/utils';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 
 export default class DifferenzlerJassGame extends JassGame {

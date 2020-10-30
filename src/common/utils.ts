@@ -1,4 +1,4 @@
-export const INCREMENTAL_VERSION = 16;
+export const INCREMENTAL_VERSION = 17;
 
 export type Comparator<T> = (a: T, b: T) => number;
 
@@ -17,7 +17,7 @@ export function wrapThrowing<U extends unknown[], V>(f: (...args: U) => V | neve
         } catch (e) {
             console.error(`Error occured in function passed to wrapThrowing!`);
             console.error(e);
-            return e;
+            return {error: e};
         }
     };
 }
@@ -31,13 +31,23 @@ export function throwExp(error: unknown): never {
     throw error;
 }
 
-export function* range(fromInclusive: number, toExclusive?: number) {
-    if (toExclusive === undefined) {
-        toExclusive = fromInclusive;
-        fromInclusive = 0;
+export function throwErr(error: string | Error): never {
+    if (typeof error === 'string') {
+        error = new Error(error);
+    }
+    throw error;
+}
+
+
+export function range(toExclusive: number): Generator<number>;
+export function range(fromInclusive: number, toExclusive: number): Generator<number, void, void>;
+export function* range(a: number, b?: number) {
+    if (b === undefined) {
+        b = a;
+        a = 0;
     }
     
-    for (let i = fromInclusive; i < toExclusive; i++) {
+    for (let i = a; i < b; i++) {
         yield i;
     }
 }
@@ -54,20 +64,11 @@ export function random<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export function deepEquals(a: any, b: any) {
-    if (typeof a !== typeof b) return false;
-    if (typeof a !== 'object') return a === b;
-
-    if (typeof a.equals === 'function') return a.equals(b);
-    if (typeof b.equals === 'function') return b.equals(a);
-
-    const aKeys = Object.keys(a);
-    const bKeys = Object.keys(b);
-
-    for (const key of [...aKeys, ...bKeys]) {
-        if (!deepEquals(a[key], b[key])) return false;
+export function arrayEquals(a: any[], b: any[]): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
     }
-
     return true;
 }
 
@@ -78,7 +79,6 @@ export async function wait<T>(ms: number, value?: T): Promise<T> {
 }
 
 export function htmlEscape(s: string) {
-    s = "" + s;
     const map: Map<string, string> = new Map([
         ['&', '&amp;'],
         ['<', '&lt;'],
@@ -87,7 +87,7 @@ export function htmlEscape(s: string) {
         ["'", '&#039;'],
     ]);
 
-    return s.replace(/[&<>"']/g, m => map.get(m) as string);
+    return `${s}`.replace(/[&<>"']/g, m => map.get(m) as string);
 }
 
 export function sanitize(strings: TemplateStringsArray, ...values: any[]): string {

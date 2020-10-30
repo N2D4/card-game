@@ -4,22 +4,21 @@ import ISerializable from "src/common/serialize/ISerializable";
 import CardDeck from "../CardDeck";
 
 
-export class JassCard extends Card {
+export default class JassCard extends Card {
     public static readonly COLORS: JassColor[] = [...range(0, 4)];
     public static readonly TYPES: JassType[] = [...range(6, 15)];
-    private static readonly instances: JassCard[][] = JassCard.COLORS.map(a => []);
+    private static readonly instances: (JassCard | null)[][] = JassCard.COLORS.map(a => JassCard.TYPES.map(b => null));
 
     private constructor(public readonly color: JassColor, public readonly type: JassType) {
         super();
-        if (JassCard.instances[color]?.[type]) {
-            throw new Error("A JassCard was constructed manually. Don't do that; use JassCard.getCard(...) instead");
+        if (JassCard.instances[color][type] ?? null !== null) {
+            throw new Error("JassCard constructor is private");
         }
     }
 
 
     public static getCard(color: JassColor, type: JassType): JassCard {
-        return this.instances[color][type - JassType.SECHSER]
-           || (this.instances[color][type - JassType.SECHSER] = new JassCard(color, type));
+        return this.instances[color][type - JassType.SECHSER] ??= new JassCard(color, type);
     }
 
     public static getRoesle7(): JassCard {
@@ -56,7 +55,7 @@ export class JassCard extends Card {
     }
 
     public toString(): string {
-        return this.color.toString() + " " + this.type.toString();
+        return `${this.color.toString()} ${this.type.toString()}`;
     }
 }
 

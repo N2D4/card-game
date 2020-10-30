@@ -1,5 +1,5 @@
 import 'common/tweaks.ts';
-import {deepEquals, range, sanitize, random, throwExp, INCREMENTAL_VERSION, wait} from 'common/utils.ts';
+import {range, sanitize, random, throwExp, INCREMENTAL_VERSION, wait, arrayEquals} from 'common/utils.ts';
 import $ from 'jquery';
 import socketio from 'socket.io-client';
 
@@ -258,7 +258,7 @@ socket.on('gameinfo', (data: any) => {
                 let stichContainer: JQuery | undefined;
                 let hasFound = false;
                 for (const message of data.gameState.messages) {
-                    if (!hasFound && message[0] === 'playcard' && deepEquals(message[1], type)) {
+                    if (!hasFound && message[0] === 'playcard' && arrayEquals(message[1], type)) {
                         hasFound = true;
                     }
                     if (hasFound && message[0] === 'stichwinner') {
@@ -441,7 +441,7 @@ function answerQuestion(qid: string, answer: any) {
     handledQuestions.add(qid);
 }
 
-function makeTrumpfButton(name: any) {
+function getCSSOrder(serverStichOrder: any) {
     const serverStichOrderToCSS: [any, string][] = [
         ["OBENABE", "obe"],
         ["UNNEUFFE", "une"],
@@ -452,10 +452,26 @@ function makeTrumpfButton(name: any) {
         ["schieb", "schieb"],
     ];
 
-    const cssOrder = (serverStichOrderToCSS.find(a => deepEquals(a[0], name)) || ["", name])[1];
+    switch (typeof name) {
+        case 'string': {
+            return new Map([
+                ['OBENABE', 'obe'],
+                ['UNNEUFFE', 'obe'],
+                ['schieb', 'obe'],
+            ]).get('name') ?? throwExp(new Error(`Unknown trumpf name: ${name}`));
+        }
+        case 'object': {
+            return cardTypes[name[1]]  ?? throwExp(new Error(`Unknown trumpf object: ${name}`));
+        }
+        default: {
+            throw new Error(`Unknown trumpf type: ${typeof name}`);
+        }
+    }
+}
 
+function makeTrumpfButton(name: any) {
     const window = $("#trumpf-window-buttons");
-    const res = $('<div class="button trumpf-choose ' + cssOrder + '"></div>');
+    const res = $('<div class="button trumpf-choose ' + getCSSOrder(name) + '"></div>');
     window.append(res);
     return res;
 }

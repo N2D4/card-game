@@ -3,12 +3,10 @@ import Player from 'src/common/game/Player';
 import { range } from '../utils';
 
 export default abstract class CardGame<P extends Player<G>, C extends Card, G extends IGameState, U extends IGameState.IUpdate> {
-    public readonly players: P[];
     public readonly updateHandlers: ((state: G) => void)[];
     private gameState: G = undefined as any;
 
-    constructor(players: P[]) {
-        this.players = players;
+    constructor(public readonly players: P[]) {
         this.updateHandlers = this.players.map(p => ((state: G) => void p.sendGameState(state)));
         this.resetGameState();
         this.broadcastGameState();

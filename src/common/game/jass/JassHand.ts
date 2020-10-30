@@ -1,7 +1,7 @@
 import ISerializable from 'src/common/serialize/ISerializable';
-import {JassCard, JassColor, JassType} from './JassCard';
+import JassCard, {JassColor} from './JassCard';
 import JassStich from './JassStich';
-import {JassWyys, JassWyysType} from './JassWyys';
+import JassWyys, {JassWyysType} from './JassWyys';
 
 export default class JassHand {
     public constructor(public readonly cards: JassCard[]) {

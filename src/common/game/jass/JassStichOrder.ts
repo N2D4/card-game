@@ -1,5 +1,5 @@
 import ISerializable from 'src/common/serialize/ISerializable';
-import {JassCard, JassColor, JassType} from './JassCard';
+import JassCard, {JassColor, JassType} from './JassCard';
 import JassStich from './JassStich';
 
 export default abstract class JassStichOrder {

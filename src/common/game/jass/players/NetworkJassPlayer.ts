@@ -1,12 +1,10 @@
-import { JassCard } from "common/game/jass/JassCard";
+import JassCard from "common/game/jass/JassCard";
 import JassStichOrder from "common/game/jass/JassStichOrder";
-import { JassWyys } from "common/game/jass/JassWyys";
+import JassWyys from "common/game/jass/JassWyys";
 import Serializer from "common/serialize/Serializer";
 import {wait, wrapThrowing, first} from "common/utils";
 import ISerializable from "src/common/serialize/ISerializable";
 import JassPlayer from "./JassPlayer";
-import crypto from 'crypto';
-import util from 'util';
 
 type PlayerSocket = {
     disconnect(): void;

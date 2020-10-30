@@ -1,10 +1,10 @@
-import { JassCard, JassColor, JassType} from 'common/game/jass/JassCard';
+import JassCard, {JassColor, JassType} from 'common/game/jass/JassCard';
 import JassGame from 'common/game/jass/JassGame';
 import JassStich from 'common/game/jass/JassStich';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
-import { random, wait } from 'common/utils';
+import {wait} from 'common/utils';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
-import { JassWyys, JassWyysType } from '../JassWyys';
+import JassWyys, {JassWyysType} from '../JassWyys';
 import assert from 'assert';
 
 export default class SchieberJassGame extends JassGame {

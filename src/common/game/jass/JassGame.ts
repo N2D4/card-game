@@ -1,6 +1,6 @@
 import CardDeck from 'common/game/CardDeck';
 import CardGame from 'common/game/CardGame';
-import { JassCard, JassColor, JassType } from 'common/game/jass/JassCard';
+import JassCard from 'common/game/jass/JassCard';
 import JassPlayer from 'common/game/jass/players/JassPlayer';
 import ISerializable from 'src/common/serialize/ISerializable';
 import Serializer from 'src/common/serialize/Serializer';
