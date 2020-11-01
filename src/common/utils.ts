@@ -95,6 +95,18 @@ export function sanitize(strings: TemplateStringsArray, ...values: any[]): strin
                                 : strings.reduce((a, n, i) => `${a}${htmlEscape("" + values[i - 1])}${n}`);
 }
 
+export function* permute<T>(arr: T[]): Iterable<T[]> {
+    if (arr.length === 0) {
+        yield [];
+    } else {
+        for (let i = 0; i < arr.length; i++) {
+            for (const rest of permute([...arr.slice(0, i), ...arr.slice(i + 1)])) {
+                yield [arr[i], ...rest];
+            }
+        }
+    }
+}
+
 /**
  * In-place stable sort. Returns `arr`
  */
@@ -103,7 +115,7 @@ export function stableSort<T>(arr: T[], comparator: Comparator<T>): T[] {
     for (let i = 0; i < arr.length; i++) {
         indices.set(arr[i], i);
     }
-    return arr.sort(thenComparing((a, b) => (indices.get(a) ?? 0) - (indices.get(b) ?? 0), comparator));
+    return arr.sort(thenComparing(comparator, (a, b) => (indices.get(a) ?? 0) - (indices.get(b) ?? 0)));
 }
 
 export function thenComparing<T>(...comparators: Comparator<T>[]): Comparator<T> {
@@ -129,6 +141,3 @@ export function extractComparator<T, R>(keyComparator: Comparator<R>, ...keyExtr
 export function naturalExtractComparator<T>(...keyExtractors: ((t: T) => any)[]): Comparator<T> {
     return extractComparator(naturalComparator(), ...keyExtractors);
 }
-
-
-
