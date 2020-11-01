@@ -130,7 +130,9 @@ export default abstract class JassStichOrder {
 
 
 
-    private constructor() { }
+    private constructor() {
+        // Empty
+    }
     
     public static colors(): JassStichOrder[] {
         return JassStichOrder.colorspriv;
@@ -143,11 +145,11 @@ export default abstract class JassStichOrder {
         return [JassStichOrder.OBENABE, JassStichOrder.UNNEUFFE].concat(JassStichOrder.colors());
     }
 
-    public canBeHeldBack(card: JassCard) {
+    public canBeHeldBack(card: JassCard): boolean {
         return false;
     }
 
-    public isUntertrumpf(stich: JassStich, card: JassCard) {
+    public isUntertrumpf(stich: JassStich, card: JassCard): boolean {
         return false;
     }
 
@@ -178,7 +180,7 @@ export default abstract class JassStichOrder {
         return 1;
     }
 
-    public isTrumpfColor(color: JassColor) {
+    public isTrumpfColor(color: JassColor): boolean {
         return false;
     }
 

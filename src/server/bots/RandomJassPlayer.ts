@@ -1,13 +1,13 @@
 // tslint:disable:no-console
 
-import { JassCard } from 'common/game/jass/JassCard';
+import JassCard from 'common/game/jass/JassCard';
 import JassStichOrder from 'common/game/jass/JassStichOrder';
-import {JassWyys, JassWyysType} from 'src/common/game/jass/JassWyys';
+import JassWyys from 'src/common/game/jass/JassWyys';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import { random, wait } from 'src/common/utils';
 import util from 'util';
 
-const log = /*console.log*/ (a?: any) => {};
+const log = /*console.log*/ (a?: any) => undefined;
 
 export default class ExampleJassPlayer extends JassPlayer {
 
@@ -15,7 +15,7 @@ export default class ExampleJassPlayer extends JassPlayer {
         super();
     }
 
-    public getName() {
+    public getName(): string {
         return this.name;
     }
 
@@ -59,7 +59,7 @@ export default class ExampleJassPlayer extends JassPlayer {
         return rnd;
     }
 
-    public async sendGameState(state: any): Promise<void> {
+    public async sendGameState(state: unknown): Promise<void> {
         log();
         log("==== " + this.name + " ====");
         log("Received message");

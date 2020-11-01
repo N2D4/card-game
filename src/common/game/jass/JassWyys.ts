@@ -3,7 +3,7 @@ import JassCard, {JassColor, JassType} from './JassCard';
 import JassStichOrder from './JassStichOrder';
 
 
-export class JassWyys {
+export default class JassWyys {
     private constructor(
         public readonly type: JassWyysType,
         public readonly cards: JassCard[],

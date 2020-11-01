@@ -16,13 +16,12 @@ type QuestionID = string;
 
 type Timeout<T> = 'none' | {ms: number, value: T};
 
-type PlayerToken = string;
 
 export default class NetworkJassPlayer extends JassPlayer {
-    private stateWaiting: boolean = false;
+    private stateWaiting = false;
     private playerSocket: PlayerSocket = undefined as any;
     private curState: any = undefined;
-    private questionsAsked: number = 0;
+    private questionsAsked = 0;
     private openQuestions: Map<QuestionID, [string, any]> = new Map();
     private questionResolvers: Map<QuestionID, (response: any) => void> = new Map();
 
@@ -39,7 +38,7 @@ export default class NetworkJassPlayer extends JassPlayer {
         return this.playerSocket;
     }
 
-    public setSocket(playerSocket: PlayerSocket) {
+    public setSocket(playerSocket: PlayerSocket): void {
         if (this.playerSocket !== undefined) this.playerSocket.disconnect();
         this.playerSocket = playerSocket;
         this.sendPacket();
@@ -94,7 +93,7 @@ export default class NetworkJassPlayer extends JassPlayer {
         this.sendPacketNow(additionalInfo);
     }
 
-    public async sendGameState(state: any): Promise<void> {
+    public async sendGameState(state: unknown): Promise<void> {
         this.curState = state;
 
         // If we only just queued a state packet, don't queue again
@@ -109,12 +108,12 @@ export default class NetworkJassPlayer extends JassPlayer {
     private async ask<T>(
         question: string,
         args: ISerializable,
-        timeout: Timeout<T> | Promise<T>,
+        timeout: Timeout<T> | Promise<T>,
         convertFunc: ((a: any) => T) = (a => a),
         acceptFunc: ((t: T) => boolean) = (a => true),
         additionalMessage?: ISerializable,
     ): Promise<T> {
-        if (timeout === 'none') timeout = new Promise(() => {}); // never resolves
+        if (timeout === 'none') timeout = new Promise(() => undefined); // never resolves
         else if ('ms' in timeout && 'value' in timeout) timeout = wait(timeout.ms, timeout.value);
 
         const questionPromise = this.addQuestion([question, args], additionalMessage);

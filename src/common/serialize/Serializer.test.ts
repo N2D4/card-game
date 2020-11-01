@@ -57,8 +57,8 @@ describe('Serializer.serialize(...)', () => {
         const cerr = jest.spyOn(console, 'error');
         try {
             cerr.mockImplementation(() => undefined);
-            expect(() => Serializer.serialize(() => { })).toThrow();
-            expect(() => Serializer.serialize(Object.assign(() => { }, { serialize: () => { } }))).toThrow();
+            expect(() => Serializer.serialize(() => 0)).toThrow();
+            expect(() => Serializer.serialize(Object.assign(() => 0, { serialize: () => 0}))).toThrow();
         } finally {
             cerr.mockRestore();
         }

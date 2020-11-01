@@ -42,7 +42,7 @@ export default class SchieberJassGame extends JassGame {
         const order: (JassStichOrder | "schieb")[] = [...JassStichOrder.getSchieberStichOrder()];
         order.push("schieb");
         this.broadcast(["turnindicator", [this.startingPlayer.index, 'yellow']]);
-        let trumpf: (JassStichOrder | "schieb") = await this.startingPlayer.chooseStichOrder(order);
+        let trumpf: (JassStichOrder | "schieb") = await this.startingPlayer.chooseStichOrder(order);
         this.broadcast(["trumpf", trumpf]);
 
         // if first player chose schieb, player 2 selects new trumpf
@@ -61,7 +61,7 @@ export default class SchieberJassGame extends JassGame {
 
         // stores best Wyys;
         let bestWyys: JassWyys = new JassWyys(JassCard.getCard(JassColor.ROESLE, JassType.SECHSER), JassWyysType.DREIBLATT);
-        let wyysWinner: number = 4;
+        let wyysWinner = 4;
 
         // stores if player wants to wyys
         const willWyys: boolean[] = [false, false, false, false];

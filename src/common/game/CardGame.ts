@@ -1,8 +1,7 @@
-import Card from 'common/game/Card';
 import Player from 'src/common/game/Player';
 import { range } from '../utils';
 
-export default abstract class CardGame<P extends Player<G>, C extends Card, G extends IGameState, U extends IGameState.IUpdate> {
+export default abstract class CardGame<P extends Player<G>, G, U> {
     public readonly updateHandlers: ((state: G) => void)[];
     private gameState: G = undefined as any;
 
@@ -12,12 +11,12 @@ export default abstract class CardGame<P extends Player<G>, C extends Card, G ex
         this.broadcastGameState();
     }
 
-    public onUpdate(handler: (state: G) => void) {
+    public onUpdate(handler: (state: G) => void): void {
         this.updateHandlers.push(handler);
         handler(this.gameState);
     }
 
-    protected resetGameState() {
+    protected resetGameState(): void {
         this.gameState = this.createGameState();
     }
 

@@ -71,7 +71,7 @@ export default class ShellJassPlayer extends NetworkJassPlayer {
         super(new ShellSocket(cmd), name);
     }
 
-    public setSocket(playerSocket: unknown) {
+    public setSocket(playerSocket: unknown): never {
         throw new Error(`Shell Jass player's socket can't be set!`);
     }
 }

@@ -12,7 +12,7 @@ export default class JassHand {
         return this.cards;
     }
 
-    public getPlayable(stich: JassStich, allowUntertrumpfen: boolean) {
+    public getPlayable(stich: JassStich, allowUntertrumpfen: boolean): JassCard[] {
         return stich.getPlayable(this, allowUntertrumpfen);
     }
 

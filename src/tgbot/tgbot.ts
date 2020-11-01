@@ -5,7 +5,7 @@ function createURLIDFromID(id: string): string {
     return 'tg-' + encodeURIComponent(id);
 }
 
-export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any>) => void) => Lobby<any> | null) {
+export function startBot(createLobby: (s: string, onUpdate: (e: LobbyState<any>) => void) => Lobby<any> | null): void {
     const token = process.env.TG_API_KEY || 'not set';
     const gameName = process.env.TG_GAME_NAME || 'not set';
     const admins = new Set((process.env.TG_ADMIN_IDS || '').split(',').map(a => Number(a)));

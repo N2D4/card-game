@@ -1,5 +1,5 @@
 import Card from 'common/game/Card';
-import {shuffle, throwExp} from 'src/common/utils';
+import {shuffle} from 'src/common/utils';
 
 export default class CardDeck<C extends Card> {
 
@@ -17,7 +17,7 @@ export default class CardDeck<C extends Card> {
         return this.draw()[0];
     }
 
-    public draw(amount: number = 1): C[] {
+    public draw(amount = 1): C[] {
         if (amount > this.cards.length) {
             throw new Error(`Can't draw this many cards!`);
         }

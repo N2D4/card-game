@@ -24,7 +24,7 @@ export default class CoiffeurJassGame extends JassGame {
         this.broadcastB(this.startingPlayer);
         
         // Choose Trumpf
-        let trumpf: (JassStichOrder | "schieb") = "schieb";
+        let trumpf: (JassStichOrder | "schieb") = "schieb";
         for (let i = 0; trumpf === "schieb"; i++) {
             const order: (JassStichOrder | "schieb")[] = [...JassStichOrder.getSchieberStichOrder()];
             if (i < this.players.length) {

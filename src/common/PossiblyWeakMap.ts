@@ -8,7 +8,7 @@ export default class PossiblyWeakMap<K, V> {
     private getMapFor<T extends K>(key: T & object): WeakMap<any, V>;
     private getMapFor<T extends K>(key: T): Map<any, V>;
     private getMapFor<T extends K>(key: T): Map<any, V> | WeakMap<any, V> {
-        if (typeof key === 'object' || typeof key === 'function') return this.#weakMap;
+        if (typeof key === 'object' || typeof key === 'function') return this.#weakMap;
         else return this.#map;
     }
 
@@ -24,7 +24,8 @@ export default class PossiblyWeakMap<K, V> {
         return this.getMapFor(key).has(key);
     }
 
-    public set(key: K, value: V) {
-        return this.getMapFor(key).set(key, value);
+    public set(key: K, value: V): this  {
+        this.getMapFor(key).set(key, value);
+        return this;
     }
 }

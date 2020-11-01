@@ -31,7 +31,7 @@ export function throwExp(error: unknown): never {
     throw error;
 }
 
-export function throwErr(error: string | Error): never {
+export function throwErr(error: string | Error): never {
     if (typeof error === 'string') {
         error = new Error(error);
     }
@@ -40,8 +40,8 @@ export function throwErr(error: string | Error): never {
 
 
 export function range(toExclusive: number): Generator<number>;
-export function range(fromInclusive: number, toExclusive: number): Generator<number, void, void>;
-export function* range(a: number, b?: number) {
+export function range(fromInclusive: number, toExclusive: number): Generator<number>;
+export function* range(a: number, b?: number): Generator<number> {
     if (b === undefined) {
         b = a;
         a = 0;
@@ -78,7 +78,7 @@ export async function wait<T>(ms: number, value?: T): Promise<T> {
     });
 }
 
-export function htmlEscape(s: string) {
+export function htmlEscape(s: string): string {
     const map: Map<string, string> = new Map([
         ['&', '&amp;'],
         ['<', '&lt;'],

@@ -14,7 +14,6 @@ import ShellJassPlayer from './bots/ShellJassPlayer';
 import Matchmaker, {LobbyState, LobbyType, Lobby, MatchmakerTypeArgs, LobbyTypeArgs} from './Matchmaker';
 import path from 'path';
 import SchieberJassGame from 'src/common/game/jass/modes/SchieberJassGame';
-import {assertNonNull} from 'src/common/utils';
 import Serializer from 'src/common/serialize/Serializer';
 import util from 'util';
 import crypto from 'crypto';
@@ -32,8 +31,7 @@ type GameTypeInfo = {
 };
 
 type MatchmakerTA = MatchmakerTypeArgs<LobbyPlayer, JassGame>;
-type DefaultLobbyTA = LobbyTypeArgs<MatchmakerTA, {}, {}>;
-type PolymorphicLobbyTA = LobbyTypeArgs<MatchmakerTA, {gameType: GameTypeInfo}, {}>;
+type PolymorphicLobbyTA = LobbyTypeArgs<MatchmakerTA, {gameType: GameTypeInfo}>;
 
 type LobbyPlayer = {secretToken: string, name: string, _socket: socketio.Socket | null};
 const allPlayersByToken = new Map<string, {inGame: false, player: LobbyPlayer} | {inGame: true, player: NetworkJassPlayer}>(); // TODO prevent memory leaks, eg. using expiration
@@ -65,7 +63,7 @@ async function createLobbyPlayer(name: string, secretToken: string, socket: sock
     return lobbyPlayer;
 }
 
-function setLobbyPlayerSocket(player: LobbyPlayer, socket: socketio.Socket | null): socketio.Socket | null {
+function setLobbyPlayerSocket(player: LobbyPlayer, socket: socketio.Socket | null): socketio.Socket | null {
     const oldSocket = player._socket;
     player._socket = socket;
     player._socket?.emit('server.reconnect-token', player.secretToken);
@@ -83,7 +81,6 @@ function setLobbyPlayerSocket(player: LobbyPlayer, socket: socketio.Socket | nul
 }
 
 const lobbyIdForPlayer = new WeakMap<JassPlayer, string>();
-const playerNames = new WeakMap<LobbyPlayer, string>();
 
 /**
  * Returns the player object and a function used to destroy it.
@@ -191,23 +188,6 @@ const polymorphicLobbyType: LobbyType<PolymorphicLobbyTA> = {
     defaultPlayerData: () => ({}),
 };
 
-const defaultLobbyType: LobbyType<DefaultLobbyTA> = {
-    id: 'default',
-    maxPlayerCount: 1,
-    startGame: (lobby, lobbyData, onClose, players) => {
-        return startGameOfType(schieberGameType, lobby, [...players.keys()], onClose);
-    },
-    defaultLobbyData: () => ({}),
-    defaultPlayerData: () => ({}),
-};
-
-const defaultLobby = assertNonNull(createLobby('default', defaultLobbyType, (state, mm) => {
-    if (state === null) return;
-    if (state.inGame) return;
-    if (state.players.length < state.lobby.type.maxPlayerCount) return;
-    mm.startGame(state.lobby);
-}, true));
-
 
 
 try {
@@ -230,7 +210,7 @@ function createLobby<LData, PData, T extends LobbyTypeArgs<MatchmakerTA, LData, 
     urlID: string,
     type: LobbyType<T>,
     afterUpdate?: (e: LobbyState<T>, m: Matchmaker<MatchmakerTA>) => void,
-    autoRefresh: boolean = false
+    autoRefresh = false
 ): Lobby<T> | null {
     const mAfterUpdate = afterUpdate ?? (() => 0);
 
@@ -298,7 +278,7 @@ function startServer() {
         socket.on('lobby.get-lobby-ids', wrapThrowing(async (resp) => {
             if (typeof resp !== 'function') throw new Error(`resp not a callback!`);
             const player = allPlayersByToken.get(await secretTokenPromise);
-            if (player === undefined || player.inGame) return false;
+            if (player === undefined || player.inGame) return false;
             resp([...matchmaker.getLobbies(player.player)].map(l => l.id));
         }));
 
@@ -396,7 +376,7 @@ function startServer() {
 
             const state = matchmaker.getLobbyState(lobby);
             const player = allPlayersByToken.get(await secretTokenPromise);
-            if (player === undefined || player.inGame || !matchmaker.isInLobby(player.player, lobby) || state === null || state.inGame) {
+            if (player === undefined || player.inGame || !matchmaker.isInLobby(player.player, lobby) || state === null || state.inGame) {
                 console.log(`The player is not in this waiting lobby or it doesn't exist!`);
                 socket.emit('lobby.error', 'not-in-waiting-lobby');
                 return;

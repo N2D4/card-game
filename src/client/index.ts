@@ -8,13 +8,10 @@ declare global {
 }
 window._JASS_IS_DEBUG = window._JASS_IS_DEBUG ?? false;
 
-let previousTurnIndicator: number | undefined;
-let previousTurnIndicatorDeltaWasNegative = false;
-
-(window as any).jQuery = $;
+let previousTurnIndicator: number | undefined;
 
 // Add touch start event listener for iOS; this allows :hover CSS selector to do its job
-document.addEventListener("touchstart", () => {}, true);
+document.addEventListener("touchstart", () => undefined, true);
 
 
 // reload page if button is clicked
@@ -61,7 +58,7 @@ const socket: SocketIOClient.Socket = socketio();
     const tryReconnect = (urlParams.get('tryreconnect') ?? 'true') === 'true';
     const reconnectToken = localStorage.getItem('r7_reconnect_token');
 
-    if (!tryReconnect || !reconnectToken) {
+    if (!tryReconnect || !reconnectToken) {
         socket.emit('lobby.join', requestedLobbyId, requestedPlayerName);
     } else {
         socket.emit('lobby.can-reconnect', reconnectToken, requestedLobbyId, (canReconnect: boolean) => {
@@ -127,8 +124,6 @@ socket.on('gameinfo', (data: any) => {
         console.log(`Received game info`, data);
     }
 
-    const str = JSON.stringify(data, undefined, 4);
-
     const isSpectating = data.isSpectating;
     if (isSpectating) document.body.classList.add('spectating');
     else document.body.classList.remove('spectating');
@@ -141,17 +136,6 @@ socket.on('gameinfo', (data: any) => {
         if (isSpectating) return pindex;
         const pcount = data.gameState.playerHandSizes.length;
         return ((pindex - data.ownid) % pcount + pcount) % pcount;
-    }
-
-    /**
-     * Rotates an array received by the server so that its indices use CSS player ids, no longer server player ids.
-     */
-    function rplayerarr<T>(arr: T[]): T[] {
-        const res: T[] = [];
-        for (let i = 0; i < data.gameState.playerHandSizes.length; i++) {
-            res.push(arr[tplayer(i)]);
-        }
-        return res;
     }
 
     // Update turn indicator
@@ -180,8 +164,6 @@ socket.on('gameinfo', (data: any) => {
             $('.turnindicator').css('transition', 'transform ease 0.5s, background-color ease 0.3s');
             $('.turnindicator').css('transform', newTransform);
             forceReflow($('.turnindicator'));
-
-            previousTurnIndicatorDeltaWasNegative = dif < 0;
         }
 
         $('.turnindicator').css('background-color', colors[data.gameState.turnIndicator[1] as 'yellow' | 'green']);
@@ -234,7 +216,7 @@ socket.on('gameinfo', (data: any) => {
                 const playerName = 'player' + tplayer(cardp.player);
 
                 let existing = findTypeCard(cardp.card);
-                if (existing.length <= 0 && (isSpectating || playerName !== 'player0')) {
+                if (existing.length <= 0 && (isSpectating || playerName !== 'player0')) {
                     existing = randomElement($('.' + playerName + '.hand .card'));
                 }
 
@@ -289,7 +271,6 @@ socket.on('gameinfo', (data: any) => {
     for (let i = 0; i < isUnplayed.length; i++) {
         for (let j = 6; j < 6 + isUnplayed[i].length; j++) {
             if (!isUnplayed[i][j-6]) continue;
-            const eles = $('.stiche > .card.' + fromTypeToClassCard([i, j]).join('.'));
             $('.stiche > .card.' + fromTypeToClassCard([i, j]).join('.')).remove();
         }
     }
@@ -442,29 +423,19 @@ function answerQuestion(qid: string, answer: any) {
 }
 
 function getCSSOrder(serverStichOrder: any) {
-    const serverStichOrderToCSS: [any, string][] = [
-        ["OBENABE", "obe"],
-        ["UNNEUFFE", "une"],
-        [["COLOR", 0], "schelle"],
-        [["COLOR", 1], "roesle"],
-        [["COLOR", 2], "schilte"],
-        [["COLOR", 3], "eichel"],
-        ["schieb", "schieb"],
-    ];
-
-    switch (typeof name) {
+    switch (typeof serverStichOrder) {
         case 'string': {
             return new Map([
                 ['OBENABE', 'obe'],
-                ['UNNEUFFE', 'obe'],
-                ['schieb', 'obe'],
-            ]).get('name') ?? throwExp(new Error(`Unknown trumpf name: ${name}`));
+                ['UNNEUFFE', 'une'],
+                ['schieb', 'schieb'],
+            ]).get(serverStichOrder) ?? throwExp(new Error(`Unknown trumpf name: ${serverStichOrder}`));
         }
         case 'object': {
-            return cardTypes[name[1]]  ?? throwExp(new Error(`Unknown trumpf object: ${name}`));
+            return cardTypes[serverStichOrder[1]] ?? throwExp(new Error(`Unknown trumpf object: ${serverStichOrder}`));
         }
         default: {
-            throw new Error(`Unknown trumpf type: ${typeof name}`);
+            throw new Error(`Unknown trumpf type: ${typeof serverStichOrder}`);
         }
     }
 }
@@ -598,17 +569,6 @@ function addCardHandler(card: (JQuery<HTMLElement> | [number, number]), handler:
     }
     card.click(handler);
     card.removeClass('unselectable');
-}
-
-
-/**
- * Takes an argument in the form of the CSS matrix() transform (2D)
- */
-function changeMatrixOrigin(matrix: number[], oldOrigin: {left: number, top: number}, newOrigin: {left: number, top: number}): number[] {
-    const x0 = oldOrigin.left - newOrigin.left;
-    const y0 = oldOrigin.top - newOrigin.top;
-    const m = matrix;
-    return [m[0], m[1], m[2], m[3], x0 - m[0] * x0 - m[2] * y0, y0 - m[1] * x0 - m[3] * y0];
 }
 
 

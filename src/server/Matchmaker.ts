@@ -55,7 +55,7 @@ export default class Matchmaker<T extends MatchmakerTypeArgs> {
         }
     }
 
-    public addLobby(lobby: LLobby<T>) {
+    public addLobby(lobby: LLobby<T>): void {
         if (this.allLobbies.has(lobby.id)) throw new Error(`A lobby with this ID already exists`);
         this.allLobbies.set(lobby.id, lobby);
         this.joinableLobbies.set(lobby, new Map());
@@ -84,11 +84,11 @@ export default class Matchmaker<T extends MatchmakerTypeArgs> {
         return this.lobbyData.get(lobby) as LData;
     }
 
-    public updateLobbyData<LData>(lobby: Lobby<LobbyTypeArgs<T, LData, any>>, updater: (a: LData) => LData) {
+    public updateLobbyData<LData>(lobby: Lobby<LobbyTypeArgs<T, LData, any>>, updater: (a: LData) => LData): void {
         this.setLobbyData(lobby, updater(this.getLobbyData(lobby)));
     }
 
-    public setLobbyData<LData>(lobby: Lobby<LobbyTypeArgs<T, LData, any>>, data: LData) {
+    public setLobbyData<LData>(lobby: Lobby<LobbyTypeArgs<T, LData, any>>, data: LData): void {
         this.lobbyData.set(lobby, data);
         this.sendUpdateSoon(lobby);
     }
@@ -146,20 +146,20 @@ export default class Matchmaker<T extends MatchmakerTypeArgs> {
         return this.getLobbies(player).has(lobby);
     }
 
-    public startGame(lobby: LLobby<T>, playerCount?: number) {
+    public startGame(lobby: LLobby<T>, playerCount?: number): void {
         const waitingPlayers = this.joinableLobbies.get(lobby);
         if (waitingPlayers === undefined) throw new Error("Given lobby is not waiting for a game!");
 
         if (playerCount === undefined) playerCount = Math.min(lobby.type.maxPlayerCount, waitingPlayers.size);
         if (!Number.isInteger(playerCount)) throw new Error("Player count not an integer!");
-        if (playerCount < 1 || playerCount > waitingPlayers.size) {
+        if (playerCount < 1 || playerCount > waitingPlayers.size) {
             throw new Error(`Player count ${playerCount} not in [1, ${waitingPlayers.size}]!`);
         }
         if (!lobby.autoRefresh && waitingPlayers.size > playerCount) {
             throw new Error("Too many players in lobby! This lobby does not auto-refresh");
         }
 
-        const players = new Map<T['P'], unknown>();;
+        const players = new Map<T['P'], unknown>();
         for (let i = 0; i < playerCount; i++) {
             const f = first(waitingPlayers);
             waitingPlayers.delete(f[0]);
@@ -183,7 +183,7 @@ export default class Matchmaker<T extends MatchmakerTypeArgs> {
         this.inGameLobbies.delete(lobby);
     }
 
-    public forceUpdateSoon(lobby: LLobby<T>) {
+    public forceUpdateSoon(lobby: LLobby<T>): void {
         this.sendUpdateSoon(lobby);
     }
 
@@ -197,7 +197,7 @@ export default class Matchmaker<T extends MatchmakerTypeArgs> {
         }
     }
 
-    public getInfo(playerMap: (p: T['P']) => any, gameMap: (g: T['G']) => any): {} {
+    public getInfo(playerMap: (p: T['P']) => any, gameMap: (g: T['G']) => any): unknown {
         return {
             lobbyInfo: [...this.allLobbies.values()],
         };

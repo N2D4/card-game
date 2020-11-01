@@ -1,23 +1,26 @@
-import Card from './Card';
 import CardGame from './CardGame';
 import Player from './Player';
 
-class MockGame extends CardGame<Player<IGameState>, Card, IGameState, IGameState.IUpdate> {
+class MockGame extends CardGame<Player<any>, any, any> {
 
-    constructor(players: Player<IGameState>[]) {
+    constructor(players: Player<any>[]) {
         super(players);
         this.playRound = jest.fn(this.playRound);
         this.createGameState = jest.fn(this.createGameState);
         this.updateGameState = jest.fn(this.updateGameState);
     }
 
-    public async playRound() {}
+    public async playRound() {
+        // empty
+    }
 
     public createGameState() {
         return "initial state";
     }
 
-    public updateGameState() {}
+    public updateGameState() {
+        // empty
+    }
 }
 
 class MockPlayer {

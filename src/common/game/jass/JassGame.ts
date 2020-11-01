@@ -6,19 +6,19 @@ import ISerializable from 'src/common/serialize/ISerializable';
 import Serializer from 'src/common/serialize/Serializer';
 import JassStich from './JassStich';
 
-export type JassGameEvent = [string, ISerializable] | string;
+export type JassGameEvent = [string, ISerializable] | string;
 export interface IJassGameState {
-    stich: JassStich | undefined;
+    stich: JassStich | undefined;
     messages: ISerializable[];
     playerHandSizes: number[];
     playerNames: string[];
-    turnIndicator: [number, 'green' | 'yellow'] | undefined;
+    turnIndicator: [number, 'green' | 'yellow'] | undefined;
 }
 
 export type Ranking = {team: JassPlayer[], score: number, totalScore: number, guessedScore?: number}[];
 export type Stich = {stichWinner: JassPlayer, score: number, cardsPlayed: JassStich}
 
-export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJassGameState, JassGameEvent> {
+export default abstract class JassGame extends CardGame<JassPlayer, IJassGameState, JassGameEvent> {
 
     constructor(players: JassPlayer[]) {
         super(players);
@@ -48,7 +48,7 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
         };
     }
 
-    protected updateGameState(gameState: IJassGameState, message: JassGameEvent) {
+    protected updateGameState(gameState: IJassGameState, message: JassGameEvent): void {
         if (Array.isArray(message) && message[0] === "stichinfo") {
             gameState.stich = message[1];
         } else if (Array.isArray(message) && message[0] === "turnindicator") {
@@ -60,7 +60,7 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
     }
 
     // TODO: Delet this; it's only for backwards compatibility so JassGames that weren't updated still compile
-    public broadcastB(...args: any[]) {
+    public broadcastB(...args: any[]): never {
         throw new Error("Removed feature; use new broadcast API");
     }
     
@@ -74,11 +74,11 @@ export default abstract class JassGame extends CardGame<JassPlayer, JassCard, IJ
             return teams.map(t => ({team: t, score: sumScore(t), totalScore: sumTotalScore(t), guessedScore: sumGuessedScore(t)}));
     }
 
-    protected broadcastRanking(teams: JassPlayer[][], showGuessedScore: boolean) {
+    protected broadcastRanking(teams: JassPlayer[][], showGuessedScore: boolean): void {
         this.broadcast(["ranking", this.createRanking(teams, showGuessedScore)]);
     }
 
-    protected broadcastLastStich(stich: JassStich) {
+    protected broadcastLastStich(stich: JassStich): void {
         const lastStich = {stichWinner: stich.getWinner(), score: stich.getScore(), cardsPlayed: stich};
         this.broadcast(["last-stich", lastStich])
     }

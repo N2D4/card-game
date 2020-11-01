@@ -10,10 +10,10 @@ import JassWyys from '../JassWyys';
 export default abstract class JassPlayer extends Player<IJassGameState> {
 
     public hand: JassHand = new JassHand([]);
-    public guessedScore: number = -1;
-    public currentScore: number = -1;
-    public totalScore: number = 0;
-    public index: number = -1;
+    public guessedScore = -1;
+    public currentScore = -1;
+    public totalScore = 0;
+    public index = -1;
 
     public async newRound(index: number, deck: CardDeck<JassCard>, numberOfCards: number): Promise<void> {
         this.index = index;
