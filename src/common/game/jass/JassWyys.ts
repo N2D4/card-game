@@ -57,7 +57,7 @@ export default class JassWyys {
      */
     public static getComparator(stichOrder: JassStichOrder): (a: JassWyys, b: JassWyys) => number {
         return (a, b) => {
-            if (a.getScore() === b.getScore()) {
+            if (a.score === b.score) {
                 if (a.type === JassWyysType.BLATT && b.type === JassWyysType.GLEICHE) {
                     return 1;
                 } else if (a.type === JassWyysType.GLEICHE && b.type === JassWyysType.BLATT) {
@@ -74,7 +74,7 @@ export default class JassWyys {
                     return Number(a.isTrumpf(stichOrder)) - Number(b.isTrumpf(stichOrder));
                 }
             } else {
-                return a.getScore() - b.getScore();
+                return a.score - b.score;
             }
         };
     }
@@ -82,7 +82,7 @@ export default class JassWyys {
     public static sum(a: JassWyys[]): number {
         let res = 0;
         a.forEach(wyys => {
-            res += wyys.getScore();
+            res += wyys.score;
         });
 
         return res;
@@ -102,23 +102,6 @@ export default class JassWyys {
             type: this.type,
             score: this.score,
         };
-    }
-
-    public getScore(): number {
-        switch (this.type) {
-            case JassWyysType.DREIBLATT:
-                return 20;
-            case JassWyysType.VIERBLATT:
-                return 50;
-            case JassWyysType.VIERGLEICHE:
-                return this.card.type === JassType.NEUNE ? 150
-                     : this.card.type === JassType.UNDER ? 200
-                     : 100;
-            case JassWyysType.FUENFBLATT:
-                return 100;
-            default:
-                return 0;
-        }
     }
 
 }
