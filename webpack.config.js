@@ -6,6 +6,9 @@ module.exports = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'index.js'
     },
+    resolve: {
+      extensions: ['.wasm', '.mjs', '.js', '.json', '.ts', '.tsx', '.jsx'],
+    },
     module: {
         rules: [ {
             test: /\.ts$/,

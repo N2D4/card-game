@@ -1,5 +1,5 @@
-import 'common/tweaks.ts';
-import {range, sanitize, random, throwExp, INCREMENTAL_VERSION, wait, arrayEquals} from 'common/utils.ts';
+import 'common/tweaks';
+import { range, sanitize, random, throwExp, INCREMENTAL_VERSION, wait, arrayEquals } from 'common/utils';
 import $ from 'jquery';
 import socketio from 'socket.io-client';
 

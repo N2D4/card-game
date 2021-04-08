@@ -60,7 +60,7 @@ export default class SchieberJassGame extends JassGame {
         const options: JassWyys[][] = [[], [], [], []]; 
 
         // stores best Wyys;
-        let bestWyys: JassWyys = new JassWyys(JassCard.getCard(JassColor.ROESLE, JassType.SECHSER), JassWyysType.DREIBLATT);
+        let bestWyys: JassWyys | undefined = undefined;
         let wyysWinner = 4;
 
         // stores if player wants to wyys
@@ -94,10 +94,10 @@ export default class SchieberJassGame extends JassGame {
                 if (i === 0) {
                     // get all possible wyys options for player
                     options[j] = player.hand.getWyysOptions();
-                    options[j].sort(JassWyys.compare);
+                    options[j].sort(JassWyys.getComparator(trumpf));
                     
                     // ask him if he wants to wyys if he can
-                    if (options[j].length !== 0 && JassWyys.compare(options[j][options[j].length - 1], bestWyys) >= 0) 
+                    if (options[j].length !== 0 && (!bestWyys || JassWyys.getComparator(trumpf)(options[j][options[j].length - 1], bestWyys)) >= 0)
                         willWyys[j] = await player.chooseToWyys((options[j]));
                     
                     if (willWyys[j]) {

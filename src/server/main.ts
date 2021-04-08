@@ -8,7 +8,7 @@ import JassGame from 'src/common/game/jass/JassGame';
 import DifferenzlerJassGame from 'src/common/game/jass/modes/DifferenzlerJassGame';
 import JassPlayer from 'src/common/game/jass/players/JassPlayer';
 import NetworkJassPlayer from 'src/common/game/jass/players/NetworkJassPlayer';
-import {wrapThrowing, INCREMENTAL_VERSION, throwExp, wait} from 'src/common/utils';
+import { wrapThrowing, INCREMENTAL_VERSION, throwExp, wait, assertNonNull } from 'src/common/utils';
 import ExampleJassPlayer from './bots/RandomJassPlayer';
 import ShellJassPlayer from './bots/ShellJassPlayer';
 import Matchmaker, {LobbyState, LobbyType, Lobby, MatchmakerTypeArgs, LobbyTypeArgs} from './Matchmaker';
@@ -31,6 +31,7 @@ type GameTypeInfo = {
 };
 
 type MatchmakerTA = MatchmakerTypeArgs<LobbyPlayer, JassGame>;
+type DefaultLobbyTA = LobbyTypeArgs<MatchmakerTA, object, object>;
 type PolymorphicLobbyTA = LobbyTypeArgs<MatchmakerTA, {gameType: GameTypeInfo}>;
 
 type LobbyPlayer = {secretToken: string, name: string, _socket: socketio.Socket | null};
@@ -188,6 +189,23 @@ const polymorphicLobbyType: LobbyType<PolymorphicLobbyTA> = {
     defaultPlayerData: () => ({}),
 };
 
+const defaultLobbyType: LobbyType<DefaultLobbyTA> = {
+    id: 'default',
+    maxPlayerCount: 1,
+    startGame: (lobby, lobbyData, onClose, players) => {
+        return startGameOfType(schieberGameType, lobby, [...players.keys()], onClose);
+    },
+    defaultLobbyData: () => ({}),
+    defaultPlayerData: () => ({}),
+};
+
+const defaultLobby = assertNonNull(createLobby('default', defaultLobbyType, (state, mm) => {
+    if (state === null) return;
+    if (state.inGame) return;
+    if (state.players.length < state.lobby.type.maxPlayerCount) return;
+    mm.startGame(state.lobby);
+}, true));
+
 
 
 try {
@@ -203,8 +221,6 @@ try {
 } catch (e) {
     console.error("Error starting Telegram bot!!", e);
 }
-
-setInterval(() => console.log(`15 minutes have passed`), 15*60*1000);
 
 function createLobby<LData, PData, T extends LobbyTypeArgs<MatchmakerTA, LData, PData>>(
     urlID: string,
@@ -264,6 +280,7 @@ function startServer() {
         console.log(`Listening at http://localhost:${port}/`);
     });
     
+    // @ts-expect-error socketio does have a call signature
     const io: socketio.Server = socketio(server);
     
     io.on('connection', (socket) => {
