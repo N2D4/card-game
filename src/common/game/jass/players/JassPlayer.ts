@@ -34,8 +34,8 @@ export default abstract class JassPlayer extends Player<IJassGameState> {
      
     public abstract getName(): string;
 
-    public abstract async chooseCard(choices: JassCard[]): Promise<JassCard>;
-    public abstract async askForScore(rangeMin: number, rangeMax: number): Promise<number>;
-    public abstract async chooseStichOrder<G, T extends (JassStichOrder | G)>(choices: T[]): Promise<T>;
-    public abstract async chooseToWyys(wyys: JassWyys[]): Promise<boolean>;
+    public abstract chooseCard(choices: JassCard[]): Promise<JassCard>;
+    public abstract askForScore(rangeMin: number, rangeMax: number): Promise<number>;
+    public abstract chooseStichOrder<G, T extends (JassStichOrder | G)>(choices: T[]): Promise<T>;
+    public abstract chooseToWyys(wyys: JassWyys[]): Promise<boolean>;
 }

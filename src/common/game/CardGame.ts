@@ -42,7 +42,7 @@ export default abstract class CardGame<P extends Player<G>, G, U> {
     }
 
 
-    public abstract async playRound(): Promise<void>;
+    public abstract playRound(): Promise<void>;
     protected abstract createGameState(): G;
     protected abstract updateGameState(gameState: G, message: U): void;
 }

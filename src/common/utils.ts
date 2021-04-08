@@ -72,8 +72,10 @@ export function arrayEquals(a: any[], b: any[]): boolean {
     return true;
 }
 
-export async function wait<T>(ms: number, value?: T): Promise<T> {
-    return await new Promise<T>(resolve => {
+export async function wait(ms: number): Promise<void>;
+export async function wait<T>(ms: number, value: T): Promise<T>;
+export async function wait<T>(ms: number, value?: T): Promise<T | undefined> {
+    return await new Promise<T | undefined>(resolve => {
         setTimeout(() => resolve(value), ms);
     });
 }
