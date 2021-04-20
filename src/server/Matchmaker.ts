@@ -33,7 +33,7 @@ export type Lobby<T extends LobbyTypeArgs> = {
     readonly id: string,
     readonly type: LobbyType<T>,
     readonly afterUpdate?: (e: LobbyState<T>, m: Matchmaker<T['M']>) => void,
-    readonly expire?: number,
+    readonly expire?: number | undefined,
     readonly autoRefresh: boolean
 };
 

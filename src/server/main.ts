@@ -248,7 +248,7 @@ function createLobby<LData, PData, T extends LobbyTypeArgs<MatchmakerTA, LData, 
         id: urlID,
         type: type,
         afterUpdate: newAfterUpdate,
-        expire: Date.now() + 36*60*60*1000,
+        expire: autoRefresh ? undefined : Date.now() + 36 * 60 * 60 * 1000,
         autoRefresh: autoRefresh
     };
 
